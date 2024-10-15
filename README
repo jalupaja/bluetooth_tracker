@@ -1,0 +1,12 @@
+# Bluetooth tracker
+> This is a WIP project with the goal of tracking bluetooth devices
+
+## Current Capabilities
+- list BLE devices and their properties
+
+## Installation
+`pip install -r requirements.txt`
+
+## Usage
+`python scanner.py`
+
