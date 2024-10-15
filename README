@@ -3,6 +3,7 @@
 
 ## Current Capabilities
 - list BLE devices and their properties
+- save devices to a local database
 
 ## Installation
 `pip install -r requirements.txt`

@@ -53,19 +53,19 @@ class BLE_Parser:
             self.blocked = self.__in_props("Blocked")
             self.legacypairing = self.__in_props("LegacyPairing")
             self.rssi = self.__in_props("RSSI")
-            if self.rssi:
-                self.rssi = ",".join(self.rssi)
             self.connected = self.__in_props("Connected")
             self.uuids = self.__in_props("UUIDs")
+            if self.uuids is not None:
+                self.uuids = ",".join(self.uuids)
             self.adapter = self.__in_props("Adapter")
             self.class_name = self.__in_props("Class")
             self.modalias = self.__in_props("Modalias")
             self.icon = self.__in_props("Icon")
 
             manu_data = self.__in_props("ManufacturerData")
-            if (manu_data is not None):
-                self.manufacturers = ",".join(self.manufacturer.parse(manu_data))
-                self.manufacturer_binary = ",".join([b for b in list(manu_data.values())])
+            if manu_data is not None:
+                self.manufacturers = ",".join([str(s) for s in self.manufacturer.parse(manu_data)])
+                self.manufacturer_binary = ",".join([b.hex() for b in list(manu_data.values())])
             self.txpower = self.__in_props("TxPower")
             self.servicesresolved = self.__in_props("ServicesResolved")
 
@@ -99,7 +99,6 @@ class BLE_Parser:
         print(f"\trssi: \t\t\t{self.rssi}")
         print(f"\tconnected: \t\t{self.connected}")
         print(f"\tuuids: \t\t\t{self.uuids}")
-        print(f"\tadapter: \t\t{self.adapter}")
         print(f"\tmanufacturers: \t\t{self.manufacturers}")
         print(f"\tmanufacturer_binary: \t{self.manufacturer_binary}")
         print(f"\ttxpower: \t\t{self.txpower}")
