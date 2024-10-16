@@ -28,13 +28,17 @@ class DB:
                 adapter TEXT,
                 manufacturers TEXT,
                 manufacturer_binary BLOB,
+                ServiceData TEXT,
                 txpower INTEGER,
                 servicesresolved BOOLEAN,
                 class_name TEXT,
                 modalias TEXT,
-                icon TEXT
+                icon TEXT,
+                timestamp TIMESTAMP,
+                geolocation TEXT
             )
         ''')
+        # TODO timestamp, location
         self.connection.commit()
 
     def insert_device(self, device):
@@ -43,8 +47,9 @@ class DB:
                 name, name2, address, address2, addresstype, alias,
                 paired, bonded, trusted, blocked, legacypairing, rssi,
                 connected, uuids, manufacturers, manufacturer_binary,
-                txpower, servicesresolved, class_name, modalias, icon
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ServiceData, txpower, servicesresolved, class_name,
+                modalias, icon, timestamp, geolocation
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             device.name,
             device.name2,
@@ -62,13 +67,21 @@ class DB:
             device.uuids,
             device.manufacturers,
             device.manufacturer_binary,
+            device.servicedata,
             device.txpower,
             device.servicesresolved,
             device.class_name,
             device.modalias,
-            device.icon
+            device.icon,
+            device.timestamp,
+            device.geolocation,
         ))
         self.connection.commit()
+
+    def get_device(self, address):
+        # TODO fix
+        self.cursor.execute(f"SELECT name FROM devices WHERE address = '{address}'")
+        self.cursor.fetchall()
 
     def close(self):
         # Close the database connection
