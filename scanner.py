@@ -1,5 +1,6 @@
 import asyncio
 from bleak import BleakScanner
+from bleak import BleakClient
 
 from ble_parser import BLE_Parser
 from db import DB
@@ -7,13 +8,17 @@ from db import DB
 db = DB()
 
 devices = None
+
 async def main():
     devices = await BleakScanner.discover()
     parsed_devices = []
 
     for d in devices:
+        # TODO test with different devices (has to be a GATT server?)
+        # client = BleakClient(d)
+        # client.connect()
         dev = BLE_Parser(d)
-        print(f"found device: {dev.name} ({dev.address})")
+        print(f"found device: {dev.name} ({dev.address}, {dev.manufacturers})")
         parsed_devices.append(dev)
 
         db.insert_device(dev)
