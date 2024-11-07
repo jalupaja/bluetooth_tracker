@@ -95,8 +95,7 @@ class BLE_Parser:
             self.txpower = self.__in_props("TxPower")
             self.servicesresolved = self.__in_props("ServicesResolved")
 
-            done_props = "Class", "Modalias", "Icon", "Name", "Address", "AddressType", "Alias", "Paired", "Bonded", "Trusted", "Blocked", "LegacyPairing", "RSSI", "Connected", "UUIDs", "Adapter", "ManufacturerData", "ServiceData", "TxPower", "ServicesResolved",
-            # done_props = "Class", "Modalias", "Icon", "Name", "Address", "AddressType", "Alias", "Paired", "Bonded", "Trusted", "Blocked", "LegacyPairing", "RSSI", "Connected", "UUIDs", "Adapter", "ManufacturerData", "ServiceData", "AdvertisingFlags", "TxPower", "ServicesResolved",
+            done_props = "Class", "Modalias", "Icon", "Name", "Address", "AddressType", "Alias", "Paired", "Bonded", "Trusted", "Blocked", "LegacyPairing", "RSSI", "Connected", "UUIDs", "Adapter", "ManufacturerData", "ServiceData", "AdvertisingFlags", "TxPower", "ServicesResolved",
 
             missing_props = [p for p in self.props if p not in done_props]
             if missing_props:

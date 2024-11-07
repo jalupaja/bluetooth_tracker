@@ -29,7 +29,7 @@ class DB:
                 manufacturers TEXT,
                 manufacturer_binary BLOB,
                 ServiceData TEXT,
-                AdvertisingFlags TEXT,
+                AdvertisingFlags BLOB,
                 txpower INTEGER,
                 servicesresolved BOOLEAN,
                 class_name TEXT,
