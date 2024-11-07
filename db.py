@@ -29,6 +29,7 @@ class DB:
                 manufacturers TEXT,
                 manufacturer_binary BLOB,
                 ServiceData TEXT,
+                AdvertisingFlags TEXT,
                 txpower INTEGER,
                 servicesresolved BOOLEAN,
                 class_name TEXT,
@@ -47,9 +48,9 @@ class DB:
                 name, name2, address, address2, addresstype, alias,
                 paired, bonded, trusted, blocked, legacypairing, rssi,
                 connected, uuids, manufacturers, manufacturer_binary,
-                ServiceData, txpower, servicesresolved, class_name,
+                ServiceData, AdvertisingFlags, txpower, servicesresolved, class_name,
                 modalias, icon, timestamp, geolocation
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             device.name,
             device.name2,
@@ -68,6 +69,7 @@ class DB:
             device.manufacturers,
             device.manufacturer_binary,
             device.servicedata,
+            device.advertisingflags,
             device.txpower,
             device.servicesresolved,
             device.class_name,

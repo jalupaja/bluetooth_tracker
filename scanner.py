@@ -13,13 +13,16 @@ async def main():
     devices = await BleakScanner.discover()
     parsed_devices = []
 
+    # TODO test (nice error msg) if bluetooth is disabled
     for d in devices:
         # TODO test with different devices (has to be a GATT server?)
-        # client = BleakClient(d)
+        client = BleakClient(d)
         # client.connect()
         dev = BLE_Parser(d)
         print(f"found device: {dev.name} ({dev.address}, {dev.manufacturers})")
-        parsed_devices.append(dev)
+
+        # parsed_devices.append(dev)
+        parsed_devices.append(client)
 
         db.insert_device(dev)
 
