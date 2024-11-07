@@ -26,7 +26,6 @@ class BLE_Parser:
 
     name = None
     name2 = None
-    path = None
     address = None
     address2 = None
     addresstype = None
@@ -41,7 +40,6 @@ class BLE_Parser:
     rssi = None
     connected = None
     uuids = None
-    adapter = None
     manufacturers = None
     manufacturer_binary = None
     txpower = None
@@ -63,7 +61,6 @@ class BLE_Parser:
         if self.device and self.details and self.props:
             self.address = self.device.address
             self.name = self.device.name
-            self.path = self.details['path']
 
             self.name2 = self.__in_props("Name")
             self.address2 = self.__in_props("Address")
@@ -83,7 +80,6 @@ class BLE_Parser:
             self.uuids = self.__in_props("UUIDs")
             if self.uuids is not None:
                 self.uuids = ",".join(self.uuids)
-            self.adapter = self.__in_props("Adapter")
             self.class_name = self.__in_props("Class")
             self.modalias = self.__in_props("Modalias")
             self.icon = self.__in_props("Icon")
@@ -95,7 +91,7 @@ class BLE_Parser:
             self.txpower = self.__in_props("TxPower")
             self.servicesresolved = self.__in_props("ServicesResolved")
 
-            done_props = "Class", "Modalias", "Icon", "Name", "Address", "AddressType", "Alias", "Paired", "Bonded", "Trusted", "Blocked", "LegacyPairing", "RSSI", "Connected", "UUIDs", "Adapter", "ManufacturerData", "ServiceData", "AdvertisingFlags", "TxPower", "ServicesResolved",
+            done_props = "Class", "Modalias", "Icon", "Name", "Address", "AddressType", "Alias", "Paired", "Bonded", "Trusted", "Blocked", "LegacyPairing", "RSSI", "Connected", "UUIDs", "ManufacturerData", "ServiceData", "AdvertisingFlags", "TxPower", "ServicesResolved",
 
             missing_props = [p for p in self.props if p not in done_props]
             if missing_props:
