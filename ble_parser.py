@@ -1,6 +1,22 @@
 from manufacturers import Manufacturer
 import datetime
 
+import random
+import pickle
+
+
+rnd = random.Random()
+def export_object(obj):
+    file_name = f"export_{rnd.randint(0, 1000)}.pk1"
+    with open(file_name, 'wb') as f:
+        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+    return file_name
+
+def import_object(file_name):
+    with open(file_name, 'rb') as f:
+        return pickle.load(f)
+
+
 class BLE_Parser:
     manufacturer = Manufacturer()
 
@@ -79,11 +95,13 @@ class BLE_Parser:
             self.txpower = self.__in_props("TxPower")
             self.servicesresolved = self.__in_props("ServicesResolved")
 
-            done_props = "Class", "Modalias", "Icon", "Name", "Address", "AddressType", "Alias", "Paired", "Bonded", "Trusted", "Blocked", "LegacyPairing", "RSSI", "Connected", "UUIDs", "Adapter", "ManufacturerData", "ServiceData", "AdvertisingFlags", "TxPower", "ServicesResolved",
+            done_props = "Class", "Modalias", "Icon", "Name", "Address", "AddressType", "Alias", "Paired", "Bonded", "Trusted", "Blocked", "LegacyPairing", "RSSI", "Connected", "UUIDs", "Adapter", "ManufacturerData", "ServiceData", "TxPower", "ServicesResolved",
+            # done_props = "Class", "Modalias", "Icon", "Name", "Address", "AddressType", "Alias", "Paired", "Bonded", "Trusted", "Blocked", "LegacyPairing", "RSSI", "Connected", "UUIDs", "Adapter", "ManufacturerData", "ServiceData", "AdvertisingFlags", "TxPower", "ServicesResolved",
 
             missing_props = [p for p in self.props if p not in done_props]
             if missing_props:
-                print(f"MISSED PROPS({self.address}): {missing_props}")
+                export_file = export_object(self.props)
+                print(f"MISSED PROPS({self.address}): {missing_props}. \n\t\texported props to {export_file}")
             if self.name != None and self.name2 != None and self.name != self.name2:
                 print(f"Names don't match: {self.name} - {self.name2}")
             if self.address != None and self.address2 != None and self.address != self.address2:
