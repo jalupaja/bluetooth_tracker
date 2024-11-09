@@ -71,7 +71,7 @@ class BluetoothScanner:
             lmp_version = None
             device_type = None
             device_id = None
-            extra_info = []
+            extra_info = ""
 
             # Extract relevant information from the hcitool output
             for line in output.splitlines():
@@ -90,7 +90,7 @@ class BluetoothScanner:
                 elif "Device ID" in line:
                     device_id = line.split("Device ID: ")[-1].strip() if "Device ID" in line else None
                 else:
-                    extra_info.append(line)
+                    extra_info = f"{extra_info}\n{line}"
 
 
             return device_class, manufacturer, version, hci_version, lmp_version, device_type, device_id, extra_info

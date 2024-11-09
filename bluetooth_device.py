@@ -13,7 +13,7 @@ class BluetoothDevice:
         self.lmp_version = None
         self.device_type = None
         self.device_id = None
-        self.extra_hci_info = []
+        self.extra_hci_info = None
         self.timestamp = datetime.datetime.now()
         self.geolocation = None # TODO current pc location (GPS/text input?) (if available)
 

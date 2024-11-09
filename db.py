@@ -46,7 +46,7 @@ class BluetoothDatabase:
                 self.connection.commit()
                 log.debug("Table `bluetooth_devices` created successfully.")
         except sqlite3.Error as e:
-            log.error(f"Error creating table: {e}")
+            log.error(f"Error Bluetooth creating table: {e}")
 
     def create_ble_table(self):
         try:
@@ -85,7 +85,7 @@ class BluetoothDatabase:
                 self.connection.commit()
                 log.debug("Table `ble_devices` created successfully.")
         except sqlite3.Error as e:
-            log.error(f"Error creating table: {e}")
+            log.error(f"Error BLE creating table: {e}")
 
     def init(self):
         self.connect()
@@ -125,7 +125,7 @@ class BluetoothDatabase:
                 self.connection.commit()
                 log.debug(f"Device {device.name} ({device.address}) inserted into the database.")
         except sqlite3.Error as e:
-            log.warning(f"Error inserting device into database: {e}")
+            log.warning(f"Error inserting bluetooth device into database: {e}")
 
     def insert_ble_device(self, device: BleDevice):
         try:
@@ -173,8 +173,6 @@ class BluetoothDatabase:
                 log.debug(f"BLE Device {device.name} ({device.address}) inserted into the database.")
         except sqlite3.Error as e:
             log.warning(f"Error inserting BLE device into database: {e}")
-
-
 
     def close(self):
         if self.connection:
