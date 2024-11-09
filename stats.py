@@ -8,9 +8,12 @@ con = sqlite3.connect(db_file)
 cur = con.cursor()
 
 # get col_names
-cur.execute(f"PRAGMA table_info(devices)")
-columns_info = cur.fetchall()
-col_names = [col[1] for col in columns_info]
+def get_col_names(table):
+    cur.execute(f"PRAGMA table_info({table})")
+    columns_info = cur.fetchall()
+    return [col[1] for col in columns_info]
+
+col_names = get_col_names("ble_devices")
 
 boring_cols = [
     "path",
@@ -32,7 +35,7 @@ boring_cols = [
     "AdvertisingFlags", # TODO
 ]
 
-cur.execute("SELECT * FROM devices")
+cur.execute("SELECT * FROM ble_devices")
 arr = np.array(cur.fetchall())
 df = pd.DataFrame(arr, columns = col_names)
 
