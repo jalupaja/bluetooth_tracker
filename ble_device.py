@@ -1,23 +1,9 @@
-from manufacturers import Manufacturer
 import datetime
 
-import random
-import pickle
+from manufacturers import Manufacturer
+import log
 
-
-rnd = random.Random()
-def export_object(obj):
-    file_name = f"export_{rnd.randint(0, 1000)}.pk1"
-    with open(file_name, 'wb') as f:
-        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
-    return file_name
-
-def import_object(file_name):
-    with open(file_name, 'rb') as f:
-        return pickle.load(f)
-
-
-class BLE_Parser:
+class BleDevice:
     manufacturer = Manufacturer()
 
     device = None
@@ -49,7 +35,7 @@ class BLE_Parser:
     icon = None
 
     timestamp = datetime.datetime.now()
-    geolocation = "" # TODO current pc location (GPS/text input?) (if available)
+    geolocation = None # TODO current pc location (GPS/text input?) (if available)
 
     def __init__(self, device):
         self.device = device
@@ -95,12 +81,11 @@ class BLE_Parser:
 
             missing_props = [p for p in self.props if p not in done_props]
             if missing_props:
-                export_file = export_object(self.props)
-                print(f"MISSED PROPS({self.address}): {missing_props}. \n\t\texported props to {export_file}")
+                log.warning(f"MISSED PROPS({self.address}): {missing_props}.")
             if self.name != None and self.name2 != None and self.name != self.name2:
-                print(f"Names don't match: {self.name} - {self.name2}")
+                log.warning(f"Names don't match: {self.name} - {self.name2}")
             if self.address != None and self.address2 != None and self.address != self.address2:
-                print(f"Addresses don't match: {self.address} - {self.address2}")
+                log.warning(f"Addresses don't match: {self.address} - {self.address2}")
 
     def __in_props(self, search):
         if self.props != None and search in self.props:
@@ -131,8 +116,4 @@ class BLE_Parser:
         print(f"\ticon: \t\t\t{self.icon}")
 
         print()
-
-
-
-
 
