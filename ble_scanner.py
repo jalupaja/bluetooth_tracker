@@ -21,27 +21,28 @@ class BleScanner:
         # TODO implement? needed?
 
     def scan_ble_devices(self):
-        log.debug("Scanning for BLE devices...")
+        while self.scanning:
+            log.debug("Scanning for BLE devices...")
 
-        # try:
-        devices = asyncio.run(BleakScanner.discover())
-        # except: # TODO what if ble is off
-            # log.debug(f"Discovery failed: {e}")
-            # time.sleep(1)
-            # continue
+            # try:
+            devices = asyncio.run(BleakScanner.discover())
+            # except: # TODO what if ble is off
+                # log.debug(f"Discovery failed: {e}")
+                # time.sleep(1)
+                # continue
 
-        if devices:
-            log.debug(f"Found {len(devices)} BLE device(s):")
-            for d in devices:
-                device = BleDevice(d)
-                self.devices.append(device)
-                log.info(f"BLE Device Address: {device.address} | Device Name: {device.name}")
-                self.exporter.add_ble_devices(device)
-        else:
-            log.debug("No BLE devices found.")
+            if devices:
+                log.debug(f"Found {len(devices)} BLE device(s):")
+                for d in devices:
+                    device = BleDevice(d)
+                    self.devices.append(device)
+                    log.info(f"BLE Device Address: {device.address} | Device Name: {device.name}")
+                    self.exporter.add_ble_devices(device)
+            else:
+                log.debug("No BLE devices found.")
 
-        # TODO
-        time.sleep(3)
+            # TODO
+            time.sleep(3)
 
     def start_scanning(self):
         scan_thread = threading.Thread(target=self.scan_ble_devices)
