@@ -1,4 +1,4 @@
-from bleak import BleakScanner, BleakClient
+from bleak import BleakScanner, BleakError, BleakClient
 import threading
 import time
 import asyncio
@@ -24,12 +24,12 @@ class BleScanner:
         while self.scanning:
             log.debug("Scanning for BLE devices...")
 
-            # try:
-            devices = asyncio.run(BleakScanner.discover())
-            # except: # TODO what if ble is off
-                # log.debug(f"Discovery failed: {e}")
-                # time.sleep(1)
-                # continue
+            try:
+                devices = asyncio.run(BleakScanner.discover())
+            except BleakError as e:
+                log.warning(f"Discovery failed: {e}")
+                time.sleep(1)
+                continue
 
             if devices:
                 log.debug(f"Found {len(devices)} BLE device(s):")
