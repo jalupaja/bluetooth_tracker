@@ -59,7 +59,9 @@ class BleDevice:
             self.servicedata = self.__in_props("ServiceData")
             if self.servicedata is not None:
                 self.servicedata = str(self.servicedata)
-            self.advertisingflags  = self.__in_props("AdvertisingFlags")
+            self.advertisingflags = self.__in_props("AdvertisingFlags")
+            if self.advertisingflags is not None:
+                self.advertisingflags = str(self.advertisingflags)
             self.legacypairing = self.__in_props("LegacyPairing")
             self.rssi = self.__in_props("RSSI")
             self.connected = self.__in_props("Connected")
