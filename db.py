@@ -7,6 +7,8 @@ from bluetooth_device import BluetoothDevice
 from ble_device import BleDevice
 import log
 
+export_all_objects = True
+
 class BluetoothDatabase:
     def __init__(self, file_path="db.db"):
         self.file_path = file_path
@@ -187,9 +189,13 @@ class Exporter:
         self.ble_devices = []
 
     def add_bluetooth_devices(self, bluetooth_device: BluetoothDevice):
+        if export_all_objects:
+            self.export_object(bluetooth_device, f"export/bluetooth/{bluetooth_device.timestamp}-{bluetooth_device.address}")
         self.bluetooth_devices.append(bluetooth_device)
 
     def add_ble_devices(self, ble_device: BleDevice):
+        if export_all_objects:
+            self.export_object(ble_device, f"export/ble/{ble_device.timestamp}-{ble_device.address}")
         self.ble_devices.append(ble_device)
 
     def export_object(self, obj, file_name):
