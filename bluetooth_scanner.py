@@ -105,7 +105,7 @@ class BluetoothScanner:
 
             try:
                 devices = bluetooth.discover_devices(duration=6, lookup_names=True, flush_cache=True)
-            except bluetooth.BluetoothError as e:
+            except (bluetooth.BluetoothError, OSError) as e:
                 log.debug(f"Bluetooth Discovery failed: {e}")
                 time.sleep(1)
                 continue
