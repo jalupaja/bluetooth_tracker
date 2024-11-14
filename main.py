@@ -8,21 +8,20 @@ if __name__ == "__main__":
     bluetooth_scanner = BluetoothScanner(exporter)
     ble_scanner = BleScanner(exporter)
 
-    # Start scanning in the background
     bluetooth_scanner.start_scanning()
+    # Start scanning
     ble_scanner.start_scanning()
 
     exporter.start_exporting()
 
     try:
         while True:
-            # Wait for the user to press 'Enter' to stop scanning
             input("Press Enter to stop scanning...\n")
             bluetooth_scanner.stop_scanning()
             ble_scanner.stop_scanning()
             break
     except KeyboardInterrupt:
-        # Handle Ctrl+C gracefully
+        # Handle Ctrl+C
         log.debug("\nScanning interrupted by user.")
         bluetooth_scanner.stop_scanning()
         ble_scanner.stop_scanning()
