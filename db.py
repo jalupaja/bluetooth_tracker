@@ -232,51 +232,48 @@ class BluetoothDatabase:
         log.debug(f"Device {device.name} ({device.address}) inserted into the database.")
 
     def insert_ble_device(self, device: BleDevice):
-        try:
-            if self.connection:
-                cursor = self.connection.cursor()
+        time_data = {"timestamp": device.timestamp,
+                     "geolocation": device.geolocation,
+                     }
 
-                device_data = (
-                        device.name,
-                        device.name2,
-                        device.address,
-                        device.address2,
-                        device.addresstype,
-                        device.alias,
-                        device.paired,
-                        device.bonded,
-                        device.trusted,
-                        device.blocked,
-                        device.legacypairing,
-                        device.rssi,
-                        device.connected,
-                        device.uuids,
-                        device.manufacturers,
-                        device.manufacturer_binary,
-                        device.servicedata,
-                        device.advertisingflags,
-                        device.txpower,
-                        device.servicesresolved,
-                        device.class_name,
-                        device.modalias,
-                        device.icon,
-                        device.timestamp,
-                        device.geolocation,
-                    )
+        time_id = self.__insert_unique__("time", time_data)
 
-                cursor.execute("""
-                    INSERT INTO ble_devices (
-                        name, name2, address, address2, addresstype, alias,
-                        paired, bonded, trusted, blocked, legacypairing, rssi,
-                        connected, uuids, manufacturers, manufacturer_binary,
-                        ServiceData, AdvertisingFlags, txpower, servicesresolved, class_name,
-                        modalias, icon, timestamp, geolocation
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, device_data)
-                self.connection.commit()
-                log.debug(f"BLE Device {device.name} ({device.address}) inserted into the database.")
-        except sqlite3.Error as e:
-            log.warning(f"Error inserting BLE device into database: {e}")
+        device_data = {
+                'name': device.name,
+                'name2': device.name2,
+                'address': device.address,
+                'address2': device.address2,
+                'addresstype': device.addresstype,
+                'alias': device.alias,
+                'paired': device.paired,
+                'bonded': device.bonded,
+                'trusted': device.trusted,
+                'blocked': device.blocked,
+                'legacypairing': device.legacypairing,
+                # 'rssi': device.rssi,
+                'connected': device.connected,
+                'uuids': device.uuids,
+                'manufacturers': device.manufacturers,
+                'manufacturer_binary': device.manufacturer_binary,
+                'ServiceData': device.servicedata,
+                'AdvertisingFlags': device.advertisingflags,
+                'txpower': device.txpower,
+                'servicesresolved': device.servicesresolved,
+                'class_name': device.class_name,
+                'modalias': device.modalias,
+                'icon': device.icon,
+                }
+
+        device_id = self.__insert_unique__("ble_device", device_data)
+
+        device_time_data = {
+                "device_id": device_id,
+                "time_id": time_id,
+                }
+
+        self.__insert_unique__("ble_device_time", device_time_data)
+
+        log.debug(f"BLE Device {device.name} ({device.address}) inserted into the database.")
 
     def close(self):
         if self.connection:
