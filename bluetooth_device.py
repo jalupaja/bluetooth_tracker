@@ -14,7 +14,7 @@ class BluetoothDevice:
         self.device_type = None
         self.device_id = None
         self.extra_hci_info = None
-        self.timestamp = datetime.datetime.now()
+        self.timestamp = str(datetime.datetime.now().replace(microsecond=0)) # timestamp in seconds
         self.geolocation = None # TODO current pc location (GPS/text input?) (if available)
 
     def update_device_class(self, device_class):

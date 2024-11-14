@@ -34,7 +34,7 @@ class BleDevice:
     modalias = None
     icon = None
 
-    timestamp = datetime.datetime.now()
+    timestamp = str(datetime.datetime.now().replace(microsecond=0)) # timestamp in seconds
     geolocation = None # TODO current pc location (GPS/text input?) (if available)
 
     def __init__(self, device):
