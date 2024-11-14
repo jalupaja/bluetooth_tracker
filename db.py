@@ -64,7 +64,6 @@ class BluetoothDatabase:
                         trusted BOOLEAN,
                         blocked BOOLEAN,
                         legacypairing BOOLEAN,
-                        rssi INTEGER,
                         connected BOOLEAN,
                         uuids TEXT,
                         manufacturers TEXT,
@@ -204,7 +203,7 @@ class BluetoothDatabase:
                 'lmp_version': device.lmp_version,
                 'device_type': device.device_type,
                 'device_id': device.device_id,
-                'rssi': device.rssi,
+                # 'rssi': device.rssi,
                 'extra_hci_info': device.extra_hci_info,
                 }
 
