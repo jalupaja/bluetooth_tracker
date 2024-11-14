@@ -14,92 +14,44 @@ class BluetoothDatabase:
         self.file_path = file_path
         self.connection = None
 
-    def connect(self):
-        try:
-            self.connection = sqlite3.connect(self.file_path)
-            log.debug(f"Connection established to {self.file_path}")
-        except sqlite3.Error as e:
-            log.debug(f"Error creating database connection: {e}")
-            self.connection = None
+    table_time = """CREATE TABLE IF NOT EXISTS time (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TIMESTAMP,
+                geolocation TEXT
+                );"""
 
-    def create_bluetooth_tables(self):
-        try:
-            if self.connection:
-                cursor = self.connection.cursor()
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS time (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        timestamp TIMESTAMP,
-                        geolocation TEXT
-                    );
-                """)
+    table_bluetooth_device_time = """CREATE TABLE IF NOT EXISTS bluetooth_device_time (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            device_id INTEGER,
+                            time_id INTEGER,
+                            FOREIGN KEY (device_id) REFERENCES bluetooth_device (id),
+                            FOREIGN KEY (time_id) REFERENCES time (id)
+                            );"""
 
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS bluetooth_device_time (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        device_id INTEGER,
-                        time_id INTEGER,
-                        FOREIGN KEY (device_id) REFERENCES bluetooth_device (id),
-                        FOREIGN KEY (time_id) REFERENCES time (id)
-                    );
-                """)
+    table_ble_device_time = """CREATE TABLE IF NOT EXISTS ble_device_time (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            device_id INTEGER,
+                            time_id INTEGER,
+                            FOREIGN KEY (device_id) REFERENCES ble_device (id),
+                            FOREIGN KEY (time_id) REFERENCES time (id)
+                            );"""
 
+    table_bluetooth_device = """CREATE TABLE IF NOT EXISTS bluetooth_device (
+                             id INTEGER PRIMARY KEY AUTOINCREMENT,
+                             address TEXT,
+                             name TEXT,
+                             device_class TEXT,
+                             manufacturer TEXT,
+                             version TEXT,
+                             hci_version TEXT,
+                             lmp_version TEXT,
+                             device_type TEXT,
+                             device_id TEXT,
+                             extra_hci_info TEXT,
+                             services TEXT
+                             );"""
 
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS bluetooth_device (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        address TEXT,
-                        name TEXT,
-                        device_class TEXT,
-                        manufacturer TEXT,
-                        version TEXT,
-                        hci_version TEXT,
-                        lmp_version TEXT,
-                        device_type TEXT,
-                        device_id TEXT,
-                        rssi INTEGER,
-                        extra_hci_info TEXT,
-                        services TEXT
-                    );
-                """)
-
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS bluetooth_service (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        host TEXT,
-                        name TEXT,
-                        service_classes TEXT,
-                        profiles TEXT,
-                        description TEXT,
-                        provider TEXT,
-                        service_id TEXT,
-                        protocol TEXT,
-                        port INTEGER
-                    );
-                """)
-
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS bluetooth_device_service (
-                        device_id INTEGER,
-                        service_id INTEGER,
-                        time_id INTEGER,
-                        FOREIGN KEY (device_id) REFERENCES bluetooth_device (id),
-                        FOREIGN KEY (service_id) REFERENCES bluetooth_service (id),
-                        FOREIGN KEY (time_id) REFERENCES time (id)
-                    );
-                """)
-
-                self.connection.commit()
-                log.debug("bluetooth tables created successfully.")
-        except sqlite3.Error as e:
-            log.error(f"Error Bluetooth creating table: {e}")
-
-    def create_ble_table(self):
-        try:
-            if self.connection:
-                cursor = self.connection.cursor()
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS ble_devices (
+    table_ble_device = """CREATE TABLE IF NOT EXISTS ble_device (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT,
                         name2 TEXT,
@@ -123,15 +75,68 @@ class BluetoothDatabase:
                         servicesresolved BOOLEAN,
                         class_name TEXT,
                         modalias TEXT,
-                        icon TEXT,
-                        timestamp TIMESTAMP,
-                        geolocation TEXT
-                    )
-                ''')
-                self.connection.commit()
-                log.debug("Table `ble_devices` created successfully.")
+                        icon TEXT
+                        ) """
+
+    table_bluetooth_service = """CREATE TABLE IF NOT EXISTS bluetooth_service (
+                              id INTEGER PRIMARY KEY AUTOINCREMENT,
+                              host TEXT,
+                              name TEXT,
+                              service_classes TEXT,
+                              profiles TEXT,
+                              description TEXT,
+                              provider TEXT,
+                              service_id TEXT,
+                              protocol TEXT,
+                              port INTEGER
+                              );"""
+
+    table_bluetooth_device_service = """CREATE TABLE IF NOT EXISTS bluetooth_device_service (
+                                     device_id INTEGER,
+                                     service_id INTEGER,
+                                     time_id INTEGER,
+                                     FOREIGN KEY (device_id) REFERENCES bluetooth_device (id),
+                                     FOREIGN KEY (service_id) REFERENCES bluetooth_service (id),
+                                     FOREIGN KEY (time_id) REFERENCES time (id)
+                                     );"""
+
+    def connect(self):
+        try:
+            self.connection = sqlite3.connect(self.file_path)
+            log.debug(f"Connection established to {self.file_path}")
         except sqlite3.Error as e:
-            log.error(f"Error BLE creating table: {e}")
+            log.debug(f"Error creating database connection: {e}")
+            self.connection = None
+
+    def create_bluetooth_tables(self):
+        try:
+            if self.connection:
+                cursor = self.connection.cursor()
+
+                cursor.execute(self.table_time)
+                cursor.execute(self.table_bluetooth_device_time)
+                cursor.execute(self.table_bluetooth_device)
+                cursor.execute(self.table_bluetooth_service)
+                cursor.execute(self.table_bluetooth_device_service)
+
+                self.connection.commit()
+                log.debug("bluetooth tables created successfully.")
+        except sqlite3.Error as e:
+            log.error(f"Error creating Bluetooth tables: {e}")
+
+    def create_ble_table(self):
+        try:
+            if self.connection:
+                cursor = self.connection.cursor()
+
+                cursor.execute(self.table_time)
+                cursor.execute(self.table_ble_device_time)
+                cursor.execute(self.table_ble_device)
+
+                self.connection.commit()
+                log.debug("ble tables created successfully.")
+        except sqlite3.Error as e:
+            log.error(f"Error creating BLE tables: {e}")
 
     def init(self):
         self.connect()
