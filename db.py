@@ -22,12 +22,31 @@ class BluetoothDatabase:
             log.debug(f"Error creating database connection: {e}")
             self.connection = None
 
-    def create_bluetooth_table(self):
+    def create_bluetooth_tables(self):
         try:
             if self.connection:
                 cursor = self.connection.cursor()
                 cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS bluetooth_devices (
+                    CREATE TABLE IF NOT EXISTS time (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        timestamp TIMESTAMP,
+                        geolocation TEXT
+                    );
+                """)
+
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS bluetooth_device_time (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        device_id INTEGER,
+                        time_id INTEGER,
+                        FOREIGN KEY (device_id) REFERENCES bluetooth_device (id),
+                        FOREIGN KEY (time_id) REFERENCES time (id)
+                    );
+                """)
+
+
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS bluetooth_device (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         address TEXT,
                         name TEXT,
@@ -40,13 +59,38 @@ class BluetoothDatabase:
                         device_id TEXT,
                         rssi INTEGER,
                         extra_hci_info TEXT,
-                        services TEXT,
-                        timestamp TIMESTAMP,
-                        geolocation TEXT
+                        services TEXT
                     );
                 """)
+
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS bluetooth_service (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        host TEXT,
+                        name TEXT,
+                        service_classes TEXT,
+                        profiles TEXT,
+                        description TEXT,
+                        provider TEXT,
+                        service_id TEXT,
+                        protocol TEXT,
+                        port INTEGER
+                    );
+                """)
+
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS bluetooth_device_service (
+                        device_id INTEGER,
+                        service_id INTEGER,
+                        time_id INTEGER,
+                        FOREIGN KEY (device_id) REFERENCES bluetooth_device (id),
+                        FOREIGN KEY (service_id) REFERENCES bluetooth_service (id),
+                        FOREIGN KEY (time_id) REFERENCES time (id)
+                    );
+                """)
+
                 self.connection.commit()
-                log.debug("Table `bluetooth_devices` created successfully.")
+                log.debug("bluetooth tables created successfully.")
         except sqlite3.Error as e:
             log.error(f"Error Bluetooth creating table: {e}")
 
@@ -91,43 +135,97 @@ class BluetoothDatabase:
 
     def init(self):
         self.connect()
-        self.create_bluetooth_table()
+        self.create_bluetooth_tables()
         self.create_ble_table()
 
-    def insert_bluetooth_device(self, device: BluetoothDevice):
+    def __create_where_clause__(self, columns: dict):
+        clauses = []
+        params = []
+
+        for col, val in columns.items():
+            if val is None:
+                clauses.append(f"{col} IS NULL")
+            else:
+                clauses.append(f"{col} = ?")
+                params.append(val)
+
+        return " AND ".join(clauses), params
+
+    def __select_exactly__(self, table, columns: dict):
         try:
             if self.connection:
                 cursor = self.connection.cursor()
-
-                services_json = str(device.services)
-                device_data = (
-                    device.address,
-                    device.name,
-                    device.device_class,
-                    device.manufacturer,
-                    device.version,
-                    device.hci_version,
-                    device.lmp_version,
-                    device.device_type,
-                    device.device_id,
-                    device.rssi,
-                    device.extra_hci_info,
-                    services_json,
-                    device.timestamp,
-                    device.geolocation
-                )
-
-                cursor.execute("""
-                    INSERT INTO bluetooth_devices (address, name, device_class, manufacturer, version,
-                    hci_version, lmp_version, device_type, device_id, rssi, extra_hci_info, services, timestamp,
-                    geolocation)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-                """, device_data)
-
-                self.connection.commit()
-                log.debug(f"Device {device.name} ({device.address}) inserted into the database.")
+                where_clause, params = self.__create_where_clause__(columns)
+                cursor.execute(f"SELECT * FROM {table} WHERE {where_clause}", params)
+                return cursor.fetchone()
         except sqlite3.Error as e:
-            log.warning(f"Error inserting bluetooth device into database: {e}")
+            log.warning(f"Error fetching items from {table}: {e}")
+
+        return None
+
+    def __insert_unique__(self, table, columns: dict):
+        try:
+            if self.connection:
+                data = self.__select_exactly__(table, columns)
+                if (data is None or len(data) <= 0):
+                    cursor = self.connection.cursor()
+                    cursor.execute(f"""INSERT OR IGNORE INTO {table} ({", ".join([col for col in columns.keys()])})
+                                   VALUES ({", ".join(['?'] * len(columns))});""",
+                                   list(columns.values()))
+                    self.connection.commit()
+                    return cursor.lastrowid
+                else:
+                    return data[0]
+
+        except sqlite3.Error as e:
+            log.warning(f"Error inserting {table} into database: {e}")
+
+        return None
+
+    def insert_bluetooth_device(self, device: BluetoothDevice):
+        time_data = {"timestamp": device.timestamp,
+                     "geolocation": device.geolocation,
+                     }
+
+        time_id = self.__insert_unique__("time", time_data)
+
+        device_data = {
+                'address': device.address,
+                'name': device.name,
+                'device_class': device.device_class,
+                'manufacturer': device.manufacturer,
+                'version': device.version,
+                'hci_version': device.hci_version,
+                'lmp_version': device.lmp_version,
+                'device_type': device.device_type,
+                'device_id': device.device_id,
+                'rssi': device.rssi,
+                'extra_hci_info': device.extra_hci_info,
+                }
+
+        device_id = self.__insert_unique__("bluetooth_device", device_data)
+
+        device_time_data = {
+                "device_id": device_id,
+                "time_id": time_id,
+                }
+
+        self.__insert_unique__("bluetooth_device_time", device_time_data)
+
+        for service in device.services:
+            # flatten lists in service
+            service_data = {k: ", ".join(map(str, v)) if isinstance(v, list) else v for k, v in service.items()}
+
+            service_id = self.__insert_unique__("bluetooth_service", service_data)
+
+            device_service_data = {
+                    "device_id": device_id,
+                    "service_id": service_id,
+                    "time_id": time_id,
+                    }
+
+            self.__insert_unique__("bluetooth_device_service", device_service_data)
+        log.debug(f"Device {device.name} ({device.address}) inserted into the database.")
 
     def insert_ble_device(self, device: BleDevice):
         try:

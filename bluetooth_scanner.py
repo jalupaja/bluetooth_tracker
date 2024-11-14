@@ -29,16 +29,20 @@ class BluetoothScanner:
 
         try:
             services = bluetooth.find_service(address=device.address)
+            print(services)
             if services:
                 for service in services:
+
                     service_info = {
-                        'name': service['name'],
-                        'description': service['description'],
-                        'protocol': service['protocol'],
-                        'port': service['port'],
                         'host': service['host'],
-                        'service-classes': service['service-classes'],
-                        'profiles': service['profiles']
+                        'name': service['name'],
+                        'service_classes': service['service-classes'],
+                        'profiles': service['profiles'],
+                        'description': service['description'],
+                        'provider': service['provider'],
+                        'service_id': service['service-id'],
+                        'protocol': service['protocol'],
+                        'port': service['port']
                     }
                     device.add_service(service_info)
             else:
