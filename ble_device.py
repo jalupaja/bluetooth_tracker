@@ -6,7 +6,7 @@ import log
 class BleDevice:
 
     def __init__(self, device):
-        self.manufacturer = Manufacturer()
+        manufacturer = Manufacturer()
 
         self.details = device.details
         self.props = self.details['props']
@@ -34,8 +34,10 @@ class BleDevice:
         if self.uuids is not None:
             self.uuids = ",".join(self.uuids)
         manu_data = self.__in_props("ManufacturerData")
+        self.manufacturers = None
+        self.manufacturer_binary = None
         if manu_data is not None:
-            self.manufacturers = ",".join([str(s) for s in self.manufacturer.parse(manu_data)])
+            self.manufacturers = ",".join([str(s) for s in manufacturer.parse(manu_data)])
             self.manufacturer_binary = ",".join([b.hex() for b in list(manu_data.values())])
         self.txpower = self.__in_props("TxPower")
         self.servicesresolved = self.__in_props("ServicesResolved")
