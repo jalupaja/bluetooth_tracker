@@ -8,8 +8,8 @@ if __name__ == "__main__":
     bluetooth_scanner = BluetoothScanner(exporter)
     ble_scanner = BleScanner(exporter)
 
-    bluetooth_scanner.start_scanning()
     # Start scanning
+    bluetooth_scanner.start_scanning()
     ble_scanner.start_scanning()
 
     exporter.start_exporting()
