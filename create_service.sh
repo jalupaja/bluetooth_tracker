@@ -3,7 +3,8 @@
 
 service_template="[Unit]
 Description=bluetooth_tracker_service
-After=bluetooth.target
+After=bluetooth.service
+Requires=bluetooth.service
 
 [Service]
 Type=simple
@@ -11,10 +12,10 @@ User=$(whoami)
 WorkingDirectory=$(pwd)
 Environment=\"PATH=$(pwd)/.venv/bin\"
 ExecStart=python $(pwd)/main.py
-Restart=on-abort
+Restart=always
 
 [Install]
-WantedBy=single-user.target"
+WantedBy=multi-user.target"
 
 
 echo -e "$service_template" | sudo tee /etc/systemd/system/bluetooth_tracker.service > /dev/null
