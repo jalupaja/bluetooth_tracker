@@ -21,11 +21,14 @@ class BleScanner:
         # TODO implement? needed?
 
     def scan_ble_devices(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
         while self.scanning:
             log.debug("Scanning for BLE devices...")
 
             try:
-                devices = asyncio.run(BleakScanner.discover())
+              devices = loop.run_until_complete(BleakScanner.discover())
             except BleakError as e:
                 log.warning(f"Discovery failed: {e}")
                 time.sleep(1)
