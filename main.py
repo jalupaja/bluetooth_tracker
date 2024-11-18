@@ -16,10 +16,7 @@ if __name__ == "__main__":
 
     try:
         while True:
-            input("Press Enter to stop scanning...\n")
-            bluetooth_scanner.stop_scanning()
-            ble_scanner.stop_scanning()
-            break
+            pass
     except KeyboardInterrupt:
         # Handle Ctrl+C
         log.debug("\nScanning interrupted by user.")
