@@ -17,6 +17,7 @@ class BleDevice:
         self.address2 = self.__in_props("Address")
         self.addresstype = self.__in_props("AddressType")
         self.alias = self.__in_props("Alias")
+        self.appearance = self.__in_props("Appearance")
         self.paired = self.__in_props("Paired")
         self.bonded = self.__in_props("Bonded")
         self.trusted = self.__in_props("Trusted")
@@ -49,7 +50,7 @@ class BleDevice:
 
         self.props = self.details['props']
 
-        done_props = "Class", "Modalias", "Icon", "Name", "Address", "AddressType", "Alias", "Paired", "Bonded", "Trusted", "Blocked", "LegacyPairing", "RSSI", "Connected", "UUIDs", "ManufacturerData", "ServiceData", "AdvertisingFlags", "TxPower", "ServicesResolved", "Adapter"
+        done_props = "Class", "Modalias", "Icon", "Name", "Address", "AddressType", "Alias", "Appearance", "Paired", "Bonded", "Trusted", "Blocked", "LegacyPairing", "RSSI", "Connected", "UUIDs", "ManufacturerData", "ServiceData", "AdvertisingFlags", "TxPower", "ServicesResolved", "Adapter"
 
         missing_props = [p for p in self.props if p not in done_props]
         if missing_props:
@@ -71,6 +72,7 @@ class BleDevice:
         print(f"{self.name} ({self.address})")
         print(f"\taddresstype: \t\t{self.addresstype}")
         print(f"\talias: \t\t\t{self.alias}")
+        print(f"\tAppearance: \t\t{self.appearance}")
         print(f"\tpaired: \t\t{self.paired}")
         print(f"\tbonded: \t\t{self.bonded}")
         print(f"\ttrusted: \t\t{self.trusted}")
