@@ -1,3 +1,7 @@
 bleak
 pyyaml
 pybluez
+
+numpy
+pandas
+tabulate
