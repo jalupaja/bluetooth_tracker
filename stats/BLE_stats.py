@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from difflib import SequenceMatcher
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 
 from BLE_device import BLE_device
 from db import DB
@@ -125,9 +126,41 @@ Requesting information ...""",
 
         return similarity_score / total_weight if total_weight > 0 else 0
 
-    def find_similar_devices(self, device_id, chunk_size=100, similarity_trashold=1.0):
-        original_device = self.get_device(device_id)
+    def find_similar_devices(self, device_id, chunk_size=100, similarity_threshold=1.0, max_workers=8):
+        def get_db_connection():
+            return DB(self.db.path)
 
+        def process_chunk(chunk_offset):
+            local_db = get_db_connection()
+
+            random_devices_data = local_db.execute(
+                f"""
+                SELECT * FROM {self.TBL_DEV}
+                WHERE id NOT IN ({','.join(str(d.id) for d in original_devices)})
+                LIMIT {chunk_size} OFFSET {chunk_offset}
+                """
+            )
+
+            local_db.close()
+
+            likely_matches_chunk = []
+            for device_data in random_devices_data:
+                random_device = BLE_device(device_data)
+
+                similarity_sum = 0
+                for original_attributes in original_unique_attributes:
+                    similarity = self.calculate_similarity_from_attributes(
+                        original_attributes, random_device
+                    )
+                    similarity_sum += similarity
+
+                if similarity_sum >= similarity_threshold:
+                    likely_matches_chunk.append((random_device.id, similarity_sum))
+                    # print(f"Likely match found: Device ID = {random_device.id}, Similarity = {similarity_sum:.2f}")
+
+            return likely_matches_chunk
+
+        original_device = self.get_device(device_id)
         original_devices = self.get_devices_by_attribute("address", original_device.address)
 
         print(f"found {len(original_devices)} devices with the same address as {device_id}")
@@ -140,36 +173,25 @@ Requesting information ...""",
         likely_matches = []
         offset = 0
 
-        while True:
-            # WHERE addresstype = 'random' AND id NOT IN ({','.join(str(d.id) for d in original_devices)})
-            random_devices_data = self.db.execute(
-                f"""
-                SELECT * FROM {self.TBL_DEV}
-                WHERE id NOT IN ({','.join(str(d.id) for d in original_devices)})
-                LIMIT {chunk_size} OFFSET {offset}
-                """
-            )
+        total_rows = self.db.execute(
+            f"""
+            SELECT COUNT(*) FROM {self.TBL_DEV}
+            WHERE id NOT IN ({','.join(str(d.id) for d in original_devices)})
+            """
+        )[0][0]
 
-            if not random_devices_data:
-                break
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            offsets = range(0, total_rows, chunk_size)
 
-            random_devices = [BLE_device(device_data) for device_data in random_devices_data]
+            futures = [executor.submit(process_chunk, offset) for offset in offsets]
 
-            for random_device in random_devices:
-                similarity_sum = 0
-                for original_attributes in original_unique_attributes:
-                    similarity = self.calculate_similarity_from_attributes(
-                        original_attributes, random_device
-                    )
-                    similarity_sum += similarity
+            for future in futures:
+                likely_matches.extend(future.result())
 
-                if similarity_sum >= similarity_trashold:
-                    likely_matches.append((random_device.id, similarity_sum))
-                    print(f"Likely match found: Device ID = {random_device.id}, Similarity = {similarity_sum:.2f}")
+        likely_matches = sorted(likely_matches, key=lambda x: x[1], reverse=True)
+        print(f"Found {len(likely_matches)} likely matches with a similarity from {likely_matches[-1][1]} to {likely_matches[0][1]}")
 
-            offset += chunk_size
-
-        return sorted(likely_matches, key=lambda x: x[1], reverse=True)
+        return likely_matches
 
     def print_timings(self, devices):
         for device in devices:
