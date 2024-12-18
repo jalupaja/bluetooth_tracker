@@ -179,6 +179,19 @@ Requesting information ...""",
             green = int(similarity * 255)
             return f"\033[38;2;{red};{green};0m"
 
+        print(f"Comparing {device_id1} - {device_id2}")
+
+        def print_timings(device):
+            d_min, d_max = device.get_timings_minmax()
+            if len(device.timings) == 1:
+                print(f"\ton {d_max}\n")
+            else:
+                print(f"\ton {d_min} - {d_max} ({len(device.timings)} times in a span of {d_max - d_min})\n")
+
+        print_timings(d1)
+        print("----")
+        print_timings(d2)
+
         for attr, weight, checker_fun in self.attributes:
             value1 = d1[attr]
             value2 = d2[attr]
@@ -186,6 +199,42 @@ Requesting information ...""",
             color = __get_color(similarity)
             print(f"{color}{attr}> {value1} - {value2}\n\033[0m")
 
+    def compareDevicesGroups(self, device_id1, device_id2):
+        # TODO combine with above function (cleanup)?
+        devices_group1 = self.get_devices_by_attribute("address", dev_origin=self.__get_id(device_id1))
+        devices_group2 = self.get_devices_by_attribute("address", dev_origin=self.__get_id(device_id2))
+
+        def __get_color(similarity):
+            red = int((1 - similarity) * 255)
+            green = int(similarity * 255)
+            return f"\033[38;2;{red};{green};0m"
+
+        print(f"Comparing unique values between device groups for IDs {device_id1} and {device_id2}")
+
+        unique_values_group1 = {attr: set() for attr, _, _ in self.attributes}
+        unique_values_group2 = {attr: set() for attr, _, _ in self.attributes}
+
+        for device in devices_group1:
+            for attr, _, _ in self.attributes:
+                value = device[attr]
+                if value is not None:
+                    unique_values_group1[attr].add(value)
+
+        for device in devices_group2:
+            for attr, _, _ in self.attributes:
+                value = device[attr]
+                if value is not None:
+                    unique_values_group2[attr].add(value)
+
+        for attr, weight, checker_fun in self.attributes:
+            values_group1 = list(unique_values_group1[attr])
+            values_group2 = list(unique_values_group2[attr])
+
+            for value1 in values_group1:
+                for value2 in values_group2:
+                    similarity = Similarity.calculate_similarity(value1, value2, checker_fun)
+                    color = __get_color(similarity)
+                    print(f"{color}{attr}> {value1} - {value2} | Similarity: {similarity:.2f}\n\033[0m")
 
 # TODO write colored helper function to compare 2 devices
 def print_dev(device_id):
