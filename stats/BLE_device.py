@@ -2,20 +2,20 @@ import datetime
 
 class BLE_device:
     def __init__(self, struct):
-    (
-        self.id, self.name, self.name2, self.address, self.address2, self.addresstype,
-        self.alias, self.paired, self.bonded, self.trusted, self.blocked, self.legacypairing,
-        self.connected, self.uuids, self.manufacturers, self.manufacturer_binary, self.servicedata,
-        self.advertisingflags, self.txpower, self.servicesresolved, self.class_name, self.modalias,
-        self.icon, self.appearance
-    ) = struct
+        (
+            self.id, self.name, self.name2, self.address, self.address2, self.addresstype,
+            self.alias, self.paired, self.bonded, self.trusted, self.blocked, self.legacypairing,
+            self.connected, self.uuids, self.manufacturers, self.manufacturer_binary, self.servicedata,
+            self.advertisingflags, self.txpower, self.servicesresolved, self.class_name, self.modalias,
+            self.icon, self.appearance
+        ) = struct
 
-    # Handle special cases for specific attributes
-    if self.manufacturer_binary == "(None,)":
-        self.manufacturer_binary = None
+        # Handle special cases for specific attributes
+        if self.manufacturer_binary == "(None,)":
+            self.manufacturer_binary = None
 
-    if self.servicedata == "(None,)":
-        self.servicedata = None
+        if self.servicedata == "(None,)":
+            self.servicedata = None
 
         self.timings = []
         self.services: [BT_service] = []
