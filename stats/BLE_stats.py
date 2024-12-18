@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from difflib import SequenceMatcher
+from collections import defaultdict
 
 from BLE_device import BLE_device
 from db import DB
@@ -170,9 +171,43 @@ Requesting information ...""",
 
         return sorted(likely_matches, key=lambda x: x[1], reverse=True)
 
-    def compareDevices(self, device_id1, device_id2):
-        d1 = self.__get_id(device_id1)
-        d2 = self.__get_id(device_id2)
+    def print_timings(self, devices):
+        for device in devices:
+            d_min, d_max = device.get_timings_minmax()
+            print(f"Device ID {device.id} ")
+            if len(device.timings) == 1:
+                print(f"timings:\n\ton {d_max}\n")
+            else:
+                print(f"timings:\n\ton {d_min} - {d_max} "
+                      f"({len(device.timings)} times in a span of {d_max - d_min})\n")
+
+
+    def print_unique_attrs(self, devices):
+        def colorize_equal(value, is_equal):
+            if is_equal:
+                return f"\033[92m{value}\033[0m" # green
+            else:
+                return f"\033[91m{value}\033[0m" # red
+
+        attr_values = {attr: defaultdict(list) for attr, _, _ in self.attributes}
+
+        for device in devices:
+            for attr, _, _ in self.attributes:
+                value = device[attr]
+                if value is not None:
+                    attr_values[attr][value].append(device.id)
+
+        for attr, values in attr_values.items():
+            print(f"{attr.upper()}:")
+            is_equal = len(values) == 1  # TODO Check if all values are the same
+            for value, device_ids in values.items():
+                colored_value = colorize_equal(value, is_equal)
+                print(f"\t{colored_value} ({', '.join(map(str, device_ids))})")
+            print()
+
+    def compare_devices(self, device_id1, device_id2):
+        d1 = self.get_device(device_id1)
+        d2 = self.get_device(device_id2)
 
         def __get_color(similarity):
             red = int((1 - similarity) * 255)
@@ -197,7 +232,7 @@ Requesting information ...""",
             value2 = d2[attr]
             similarity = Similarity.calculate_similarity(value1, value2, checker_fun)
             color = __get_color(similarity)
-            print(f"{color}{attr}> {value1} - {value2}\n\033[0m")
+            print(f"{color}{attr.upper()}> {value1} - {value2}\n\033[0m")
 
     def compareDevicesGroups(self, device_id1, device_id2):
         # TODO combine with above function (cleanup)?
