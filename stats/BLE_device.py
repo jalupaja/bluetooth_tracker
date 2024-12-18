@@ -16,8 +16,8 @@ class BLE_device:
         self.blocked = struct[11]
         self.legacypairing = struct[12]
         self.connected = struct[13]
-        self.uuids = struct[14]
-        self.manufacturers = struct[15]
+        self.uuids = struct[15]
+        self.manufacturers = struct[14]
         if struct[16] == "(None,)":
             self.manufacturer_binary = None
         else:

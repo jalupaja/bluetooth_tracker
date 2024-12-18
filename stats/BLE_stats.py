@@ -40,18 +40,18 @@ Requesting information ...""",
             ("address", 10, Similarity.exact),
             ("address2", 10, Similarity.exact),
             ("addresstype", 0.0, Similarity.exact),
-            ("alias", 0.3, Similarity.text),
-            ("appearance", 0.3, Similarity.numeric), # TODO
-            ("legacypairing", 0.2, Similarity.numeric), # TODO
+            ("alias", 0.7, Similarity.text),
+            ("appearance", 0.3, Similarity.numeric),
+            ("legacypairing", 0.5, Similarity.numeric),
             ("uuids", 1.0, None), # TODO
             ("manufacturers", 0.7, None), # TODO
-            ("manufacturer_binary", 0.9, None), # TODO has to actual bytes!!!
+            ("manufacturer_binary", 0.9, None), # TODO has to be actual bytes!!!
             ("servicedata", 0.6, None), # TODO should be binary. current is str(binary...)
             ("advertisingflags", 0.4, None), # TODO
-            ("servicesresolved", 0.3, None), # TODO
-            ("class_name", 0.4, Similarity.text),
-            ("modalias", 0.5, Similarity.text),
-            ("icon", 0.2, None),
+            ("servicesresolved", 0.2, None), # TODO
+            ("class_name", 0.3, Similarity.text),
+            ("modalias", 0.6, Similarity.text),
+            ("icon", 0.7, None),
             ]
 
     def get_all_devices(self):
