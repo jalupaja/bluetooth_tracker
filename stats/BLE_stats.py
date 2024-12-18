@@ -61,26 +61,6 @@ Requesting information ...""",
     def search_device(self, search):
         return pd.Series(self.db.execute(f"SELECT id, name, address FROM {self.TBL_DEV} WHERE name LIKE '%{search}%'")).unique()
 
-    def parse_id(self, device_id):
-        self.dev_origin = self.get_device(device_id)
-        interest_score = 0
-        summary = ""
-
-        devices_address = []
-
-        for attribute in ["address", "name", ]: # TODO use more
-            summary += f"\n\n--- PARSING {attribute.upper()} {self.dev_origin[attribute]} ---\n"
-            devices = self.get_devices_by_attribute(attribute, dev_origin = self.dev_origin)
-            if attribute == "address":
-                devices_address = devices
-            i_score, r_str = 0, "" # TODO
-            interest_score += i_score
-            summary += r_str
-
-
-        self.interest_score = interest_score
-        self.summary = summary
-
     def get_device(self, device_id):
 
         dev = BLE_device(
@@ -194,37 +174,42 @@ Requesting information ...""",
         return likely_matches
 
     def print_timings(self, devices):
+        device_timings = []
         for device in devices:
             d_min, d_max = device.get_timings_minmax()
-            print(f"Device ID {device.id} ")
-            if len(device.timings) == 1:
-                print(f"timings:\n\ton {d_max}\n")
-            else:
-                print(f"timings:\n\ton {d_min} - {d_max} "
-                      f"({len(device.timings)} times in a span of {d_max - d_min})\n")
+            if d_min is not None:
+                device_timings.append((device, d_min, d_max))
 
+        device_timings.sort(key=lambda x: x[1])
+        if len(devices) > 1:
+            print(f"TIMINGS FOR {len(devices)} DEVICES FROM {device_timings[0][1]} TO {device_timings[-1][2]}:")
+
+        for device, d_min, d_max in device_timings:
+            if len(device.timings) == 1:
+                print(f"Device ID: {device.address} on {d_max}")
+            else:
+                print(f"Device ID: {device.address} on {d_min} - {d_max} ({len(device.timings)} times in a span of {d_max - d_min})")
 
     def print_unique_attrs(self, devices):
-        def colorize_equal(value, is_equal):
-            if is_equal:
-                return f"\033[92m{value}\033[0m" # green
-            else:
-                return f"\033[91m{value}\033[0m" # red
-
-        attr_values = {attr: defaultdict(list) for attr, _, _ in self.attributes}
+        unique_attrs = {attr: {} for attr, _, _ in self.attributes}
 
         for device in devices:
             for attr, _, _ in self.attributes:
                 value = device[attr]
                 if value is not None:
-                    attr_values[attr][value].append(device.id)
+                    if value not in unique_attrs[attr]:
+                        unique_attrs[attr][value] = []
+                    unique_attrs[attr][value].append(device.id)
 
-        for attr, values in attr_values.items():
-            print(f"{attr.upper()}:")
-            is_equal = len(values) == 1  # TODO Check if all values are the same
+        for attr, values in unique_attrs.items():
+            if not values:
+                continue
+
+            print(f"\033[1m{attr.upper()}:\033[0m")
+            color = "\033[92m" if len(values) <= 1 else "\033[91m"  # green: equal, red: different
             for value, device_ids in values.items():
-                colored_value = colorize_equal(value, is_equal)
-                print(f"\t{colored_value} ({', '.join(map(str, device_ids))})")
+                device_ids_str = ", ".join(map(str, device_ids))
+                print(f"\t{color}{value} \033[0m({device_ids_str})")
             print()
 
     def compare_devices(self, device_id1, device_id2):
@@ -238,16 +223,7 @@ Requesting information ...""",
 
         print(f"Comparing {device_id1} - {device_id2}")
 
-        def print_timings(device):
-            d_min, d_max = device.get_timings_minmax()
-            if len(device.timings) == 1:
-                print(f"\ton {d_max}\n")
-            else:
-                print(f"\ton {d_min} - {d_max} ({len(device.timings)} times in a span of {d_max - d_min})\n")
-
-        print_timings(d1)
-        print("----")
-        print_timings(d2)
+        self.print_timings([d1, d2])
 
         for attr, weight, checker_fun in self.attributes:
             value1 = d1[attr]
@@ -293,7 +269,9 @@ Requesting information ...""",
                     color = __get_color(similarity)
                     print(f"{color}{attr.upper()}> {value1} - {value2} | Similarity: {similarity:.2f}\n\033[0m")
 
-# TODO write colored helper function to compare 2 devices
+    def get_devices(self, ids):
+        return [self.get_device(i) for i in ids]
+
 def print_dev(device_id):
     print(ble_stats.get_device(device_id))
 
@@ -302,7 +280,7 @@ def print_results(results):
         print_dev(r[0])
 
 # TODO original... servicedata is string? should be like manu_binary
-# TODO manufactuerers, uuids getauscht?
+# TODO fix list comparison. should compare per item. if not exists, should use None for instance (UUIDS!!!)
 # TODO TESTING
 DB_PATH = "../db.db"
 db = DB(DB_PATH)
@@ -310,7 +288,9 @@ db = DB(DB_PATH)
 ble_stats = BLE_stats(db)
 # [print(b) for b in ble_stats.search_device("Apple")]
 # results = ble_stats.find_similar_devices(device_id=23453)
-result = ble_stats.find_similar_devices(18656, similarity_trashold=1.0)
+# result = ble_stats.find_similar_devices(8102, similarity_threshold=1.0)
+result = ble_stats.find_similar_devices(18656, similarity_threshold=1.0)
 ids = [r[0] for r in result]
 interesting_devices = [ble_stats.get_device(i) for i in ids[0:30]]
-# TODO could be paralized...
+ble_stats.print_unique_attrs(interesting_devices)
+
