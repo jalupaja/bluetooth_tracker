@@ -7,7 +7,7 @@ from bluetooth_device import BluetoothDevice
 from ble_device import BleDevice
 import log
 
-export_all_objects = True
+export_all_objects = False
 
 class BluetoothDatabase:
     def __init__(self, file_path="db.db"):
