@@ -31,6 +31,8 @@ class Similarity:
     @staticmethod
     def text(text1, text2):
         if text1 is None or text2 is None \
+                or text1 == "" \
+                or text2 == "" \
                 or text1 == "(bytearray(b'\\x00'),)" \
                 or text2 == "(bytearray(b'\\x00'),)" \
                 or text1 == "(None,)" \
