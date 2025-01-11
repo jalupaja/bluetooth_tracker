@@ -39,6 +39,9 @@ class Similarity:
                 or text2 == "(None,)":
             return 0
 
+        text1 = str(text1)
+        text2 = str(text2)
+
         if DEBUG:
             print(f"text: '{text1}' : {text2} -> {SequenceMatcher(None, text1, text2).ratio()}")
         return SequenceMatcher(None, text1, text2).ratio()
@@ -87,6 +90,9 @@ class Similarity:
 
         if num1 == num2:
             return 1.0
+
+        num1 = int(num1)
+        num2 = int(num2)
 
         if DEBUG:
             print(f"num: {num1} : {num2} -> {1 - abs(num1 - num2) / max(abs(num1), abs(num2))}")

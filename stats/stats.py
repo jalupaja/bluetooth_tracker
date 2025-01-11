@@ -116,18 +116,21 @@ Requesting information ...""",
         ret_str = ""
 
         minmax = [dev.get_timings_minmax() for dev in devices]
-        overall_min = min([mx[0] for mx in minmax])
-        overall_max = max([mx[1] for mx in minmax])
+        if minmax[0]:
+            overall_min = min([mx[0] for mx in minmax])
+            overall_max = max([mx[1] for mx in minmax])
 
-        ret_str += f"Found device {len(devices)} time{'s' if len(devices) == 1 else ''} with an overall range of {overall_max - overall_min}:\n"
+            ret_str += f"Found device {len(devices)} time{'s' if len(devices) == 1 else ''} with an overall range of {overall_max - overall_min}:\n"
 
         # TODO maybe sort them by min timing
         for dev in devices:
-            d_min, d_max = dev.get_timings_minmax()
-            if len(dev.timings) == 1:
-                ret_str += f"\ton {d_max}\n"
-            else:
-                ret_str += f"\ton {d_min} - {d_max} ({len(dev.timings)} times in a span of {d_max - d_min})\n"
+            minmax = dev.get_timings_minmax()
+            if minmax:
+                d_min, d_max = minmax
+                if len(dev.timings) == 1:
+                    ret_str += f"\ton {d_max}\n"
+                else:
+                    ret_str += f"\ton {d_min} - {d_max} ({len(dev.timings)} times in a span of {d_max - d_min})\n"
 
         def __devices_attribute(devices, val):
             return [dev[val] for dev in devices]

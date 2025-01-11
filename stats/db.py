@@ -3,10 +3,11 @@ import sqlite3
 class DB:
     def __init__(self, path):
         self.path = path
-        self.con = sqlite3.connect(path)
+        self.con = sqlite3.connect(path, check_same_thread=False)
         self.cur = self.con.cursor()
 
     def __del__(self):
+        self.con.commit()
         self.con.close()
 
     def get_tables(self):
@@ -20,6 +21,9 @@ class DB:
     def execute(self, query):
         self.cur.execute(query)
         return self.cur.fetchall()
+
+    def commit(self):
+        self.con.commit()
 
     def close(self):
         self.__del__()
