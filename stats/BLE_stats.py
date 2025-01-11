@@ -58,6 +58,53 @@ Requesting information ...""",
     def get_all_devices(self):
         return pd.Series(self.db.execute(f"SELECT id, name, address FROM {self.TBL_DEV}")).unique()
 
+    def find_interesting_devices(self, chunk_size=100, similarity_threshold=0.8, max_workers=8):
+        def get_db_connection():
+            return DB(self.db.path)
+
+        def process_chunk(chunk_offset):
+            local_db = get_db_connection()
+
+            devices_data = local_db.execute(
+                f"SELECT * FROM {self.TBL_DEV} LIMIT {chunk_size} OFFSET {chunk_offset}"
+            )
+
+            interesting_devices = []
+            for device_data in devices_data:
+                device = BLE_device(device_data)
+
+                potential_matches = local_db.execute(
+                    f"""
+                    SELECT * FROM {self.TBL_DEV}
+                    WHERE address != '{device.address}'
+                    """
+                )
+
+                for match_data in potential_matches:
+                    match_device = BLE_device(match_data)
+                    similarity = self.calculate_similarity_from_attributes(device.to_dict(), match_device)
+
+                    if similarity >= similarity_threshold:
+                        interesting_devices.append(device.id)
+                        break
+
+            local_db.close()
+            return interesting_devices
+
+        total_rows = self.db.execute(
+            f"SELECT COUNT(*) FROM {self.TBL_DEV}"
+        )[0][0]
+
+        interesting_device_ids = []
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            offsets = range(0, total_rows, chunk_size)
+            futures = [executor.submit(process_chunk, offset) for offset in offsets]
+
+            for future in futures:
+                interesting_device_ids.extend(future.result())
+
+        return list(set(interesting_device_ids))
+
     def search_device(self, search):
         return pd.Series(self.db.execute(f"SELECT id, name, address FROM {self.TBL_DEV} WHERE name LIKE '%{search}%'")).unique()
 
@@ -116,12 +163,10 @@ Requesting information ...""",
             random_devices_data = local_db.execute(
                 f"""
                 SELECT * FROM {self.TBL_DEV}
-                WHERE id NOT IN ({','.join(str(d.id) for d in original_devices)})
                 LIMIT {chunk_size} OFFSET {chunk_offset}
                 """
             )
-
-            local_db.close()
+            # TODO WHERE id NOT IN ({','.join(str(d.id) for d in original_devices)})
 
             likely_matches_chunk = []
             for device_data in random_devices_data:
@@ -129,6 +174,7 @@ Requesting information ...""",
 
                 similarity_sum = 0
                 for original_attributes in original_unique_attributes:
+
                     similarity = self.calculate_similarity_from_attributes(
                         original_attributes, random_device
                     )
@@ -156,12 +202,14 @@ Requesting information ...""",
         total_rows = self.db.execute(
             f"""
             SELECT COUNT(*) FROM {self.TBL_DEV}
-            WHERE id NOT IN ({','.join(str(d.id) for d in original_devices)})
             """
+            # WHERE id NOT IN ({','.join(str(d.id) for d in original_devices)})
         )[0][0]
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             offsets = range(0, total_rows, chunk_size)
+
+            test = process_chunk(offsets[0])
 
             futures = [executor.submit(process_chunk, offset) for offset in offsets]
 
@@ -169,9 +217,24 @@ Requesting information ...""",
                 likely_matches.extend(future.result())
 
         likely_matches = sorted(likely_matches, key=lambda x: x[1], reverse=True)
-        print(f"Found {len(likely_matches)} likely matches with a similarity from {likely_matches[-1][1]} to {likely_matches[0][1]}")
+        if len(likely_matches) == 0:
+            print(f"Found no likely matches")
+        else:
+            print(f"Found {len(likely_matches)} likely matches with a similarity from {likely_matches[-1][1]} to {likely_matches[0][1]}")
 
         return likely_matches
+
+    def print_all_timings(self, devices):
+        timings = []
+        for device in devices:
+            for timing in device.timings:
+                timings.append((device.address, timing))
+
+        timings.sort(key=lambda x: x[1])
+
+        print(f"TIMINGS FOR {len(devices)} DEVICES:")
+        for address, timing in timings:
+            print(f"Device ID: {address}: {timing}")
 
     def print_timings(self, devices):
         device_timings = []
@@ -224,6 +287,7 @@ Requesting information ...""",
         print(f"Comparing {device_id1} - {device_id2}")
 
         self.print_timings([d1, d2])
+        self.print_all_timings([d1, d2])
 
         for attr, weight, checker_fun in self.attributes:
             value1 = d1[attr]
@@ -269,6 +333,8 @@ Requesting information ...""",
                     color = __get_color(similarity)
                     print(f"{color}{attr.upper()}> {value1} - {value2} | Similarity: {similarity:.2f}\n\033[0m")
 
+        self.print_all_timings(devices_group1 + devices_group2)
+
     def get_devices(self, ids):
         return [self.get_device(i) for i in ids]
 
@@ -279,18 +345,40 @@ def print_results(results):
     for r in results:
         print_dev(r[0])
 
+# TODO fix output: found number... (still keep original devices)
+
 # TODO original... servicedata is string? should be like manu_binary
 # TODO fix list comparison. should compare per item. if not exists, should use None for instance (UUIDS!!!)
 # TODO TESTING
-DB_PATH = "../db.db"
+DB_PATH = "../db/db.db"
 db = DB(DB_PATH)
 
-ble_stats = BLE_stats(db)
-# [print(b) for b in ble_stats.search_device("Apple")]
-# results = ble_stats.find_similar_devices(device_id=23453)
-# result = ble_stats.find_similar_devices(8102, similarity_threshold=1.0)
-result = ble_stats.find_similar_devices(18656, similarity_threshold=1.0)
-ids = [r[0] for r in result]
-interesting_devices = [ble_stats.get_device(i) for i in ids[0:30]]
-ble_stats.print_unique_attrs(interesting_devices)
+ble = BLE_stats(db)
+# DB_PATH = "../db/2024.db"
+# [print(b) for b in ble.search_device("Apple")]
+# results = ble.find_similar_devices(device_id=23453)
+# result = ble.find_similar_devices(8102, similarity_threshold=1.0)
+# result = ble.find_similar_devices(18656, similarity_threshold=1.0)
+# ids = [r[0] for r in result]
+# interesting_devices = [ble.get_device(i) for i in ids[0:30]]
+# ble.print_unique_attrs(interesting_devices)
 
+# DB_PATH = "../db/38c3.db"
+# devices = ble.find_interesting_devices()
+# devices = ble.get_all_devices()
+# device_ids = [d[0] for d in devices]
+# summaries = []
+# for device_id in device_ids:
+#     ble.parse_id(device_id)
+#     summaries.append(ble.summary)
+#     if ble.interest_score > 4:
+#         print(f"device id {device_id}: {ble.interest_score}")
+dev = ble.find_similar_devices(69179, similarity_threshold=0.15)
+# dev = ble.find_similar_devices(25501, similarity_threshold=0.30)
+# devices = [ble.get_device(d[0]) for d in dev]
+# ble.print_all_timings(devices)
+# print(ble.get_device(25501))
+
+# dev = [ble.get_devices_by_attribute("address", d) for d in devices_in_2_places]
+# ids = [[d.id for d in x] for x in dev]
+# ids_in_3_places

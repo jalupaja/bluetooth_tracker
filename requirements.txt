@@ -1,3 +1,6 @@
 bleak
 pyyaml
 pybluez
+numpy
+rich
+matplotlib
