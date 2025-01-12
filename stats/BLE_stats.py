@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from datetime import datetime
 from difflib import SequenceMatcher
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -58,52 +59,26 @@ Requesting information ...""",
     def get_all_devices(self):
         return pd.Series(self.db.execute(f"SELECT id, name, address FROM {self.TBL_DEV}")).unique()
 
-    def find_interesting_devices(self, chunk_size=100, similarity_threshold=0.8, max_workers=8):
-        def get_db_connection():
-            return DB(self.db.path)
+    def find_most_seen_devices(self):
+        res = self.db.execute(f"""
+            SELECT ble_device.address, time.timestamp
+            FROM {self.TBL_DEV_TIME}
+            JOIN {self.TBL_DEV} ON ble_device_time.device_id = ble_device.id
+            JOIN {self.TBL_TIME} ON ble_device_time.time_id = time.id
+        """)
+            # WHERE ble_device.addresstype = 'random';
 
-        def process_chunk(chunk_offset):
-            local_db = get_db_connection()
+        device_timestamps = defaultdict(list)
+        for address, timestamp in res:
+            device_timestamps[address].append(datetime.fromisoformat(timestamp))
 
-            devices_data = local_db.execute(
-                f"SELECT * FROM {self.TBL_DEV} LIMIT {chunk_size} OFFSET {chunk_offset}"
-            )
+        interesting_devices = []
+        for address, timestamps in device_timestamps.items():
+            timestamps.sort()
+            if (timestamps[-1] - timestamps[0]).total_seconds() >= 60*60*24: # 24h
+                interesting_devices.append(address)
 
-            interesting_devices = []
-            for device_data in devices_data:
-                device = BLE_device(device_data)
-
-                potential_matches = local_db.execute(
-                    f"""
-                    SELECT * FROM {self.TBL_DEV}
-                    WHERE address != '{device.address}'
-                    """
-                )
-
-                for match_data in potential_matches:
-                    match_device = BLE_device(match_data)
-                    similarity = self.calculate_similarity_from_attributes(device.to_dict(), match_device)
-
-                    if similarity >= similarity_threshold:
-                        interesting_devices.append(device.id)
-                        break
-
-            local_db.close()
-            return interesting_devices
-
-        total_rows = self.db.execute(
-            f"SELECT COUNT(*) FROM {self.TBL_DEV}"
-        )[0][0]
-
-        interesting_device_ids = []
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            offsets = range(0, total_rows, chunk_size)
-            futures = [executor.submit(process_chunk, offset) for offset in offsets]
-
-            for future in futures:
-                interesting_device_ids.extend(future.result())
-
-        return list(set(interesting_device_ids))
+        return interesting_devices
 
     def search_device(self, search):
         return pd.Series(self.db.execute(f"SELECT id, name, address FROM {self.TBL_DEV} WHERE name LIKE '%{search}%'")).unique()
@@ -220,9 +195,86 @@ Requesting information ...""",
         if len(likely_matches) == 0:
             print(f"Found no likely matches")
         else:
-            print(f"Found {len(likely_matches)} likely matches with a similarity from {likely_matches[-1][1]} to {likely_matches[0][1]}")
+            print(f"Found {len(likely_matches) - len(original_devices)} likely matches.")
 
         return likely_matches
+
+    def check_similar_devices(self, device_id, chunk_size=100, similarity_threshold=1.0, max_workers=8):
+        def get_db_connection():
+            return DB(self.db.path)
+
+        def process_chunk(chunk_offset):
+            local_db = get_db_connection()
+
+            random_devices_data = local_db.execute(
+                f"""
+                SELECT * FROM {self.TBL_DEV}
+                LIMIT {chunk_size} OFFSET {chunk_offset}
+                """
+            )
+            # TODO WHERE id NOT IN ({','.join(str(d.id) for d in original_devices)})
+
+            likely_matches_chunk = []
+            for device_data in random_devices_data:
+                random_device = BLE_device(device_data)
+
+                similarity_sum = 0
+                for original_attributes in original_unique_attributes:
+
+                    similarity = self.calculate_similarity_from_attributes(
+                        original_attributes, random_device
+                    )
+                    similarity_sum += similarity
+
+                if similarity_sum >= similarity_threshold:
+                    likely_matches_chunk.append((random_device.id, similarity_sum))
+                    # print(f"Likely match found: Device ID = {random_device.id}, Similarity = {similarity_sum:.2f}")
+
+            return likely_matches_chunk
+
+        original_device = self.get_device(device_id)
+        original_devices = self.get_devices_by_attribute("address", original_device.address)
+
+        original_unique_attributes = [
+            {attr: dev[attr] for attr, _, _ in self.attributes if dev[attr] is not None}
+            for dev in original_devices
+        ]
+
+        likely_matches = []
+        offset = 0
+
+        total_rows = self.db.execute(
+            f"""
+            SELECT COUNT(*) FROM {self.TBL_DEV}
+            """
+            # WHERE id NOT IN ({','.join(str(d.id) for d in original_devices)})
+        )[0][0]
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            offsets = range(0, total_rows, chunk_size)
+
+            test = process_chunk(offsets[0])
+
+            futures = [executor.submit(process_chunk, offset) for offset in offsets]
+
+            for future in futures:
+                likely_matches.extend(future.result())
+
+        likely_matches = sorted(likely_matches, key=lambda x: x[1], reverse=True)
+
+        return len(likely_matches) - len(original_devices)
+
+    def find_interesting_random_devices(self, chunk_size=100, similarity_threshold=0.6, max_workers=8):
+        devices = self.db.execute(f"SELECT id,manufacturers FROM {self.TBL_DEV} WHERE addresstype = 'random'")
+
+        devices = [d[0] for d in devices]
+        for d in devices:
+            if self.get_device(d).manufacturers == "Apple, Inc.": # Apple has way too many...
+                continue
+
+            check = self.check_similar_devices(d, chunk_size, similarity_threshold, max_workers)
+            if check > 0:
+                print(f"{d}\t{check}")
 
     def print_all_timings(self, devices):
         timings = []
@@ -275,36 +327,30 @@ Requesting information ...""",
                 print(f"\t{color}{value} \033[0m({device_ids_str})")
             print()
 
+    def __get_color(self, similarity):
+        red = int((1 - similarity) * 255)
+        green = int(similarity * 255)
+        return f"\033[38;2;{red};{green};0m"
+
     def compare_devices(self, device_id1, device_id2):
         d1 = self.get_device(device_id1)
         d2 = self.get_device(device_id2)
 
-        def __get_color(similarity):
-            red = int((1 - similarity) * 255)
-            green = int(similarity * 255)
-            return f"\033[38;2;{red};{green};0m"
-
         print(f"Comparing {device_id1} - {device_id2}")
 
         self.print_timings([d1, d2])
-        self.print_all_timings([d1, d2])
+        # self.print_all_timings([d1, d2])
 
         for attr, weight, checker_fun in self.attributes:
             value1 = d1[attr]
             value2 = d2[attr]
             similarity = Similarity.calculate_similarity(value1, value2, checker_fun)
-            color = __get_color(similarity)
+            color = self.__get_color(similarity)
             print(f"{color}{attr.upper()}> {value1} - {value2}\n\033[0m")
 
     def compare_devices_groups(self, device_id1, device_id2):
-        # TODO combine with above function (cleanup)?
         devices_group1 = self.get_devices_by_attribute("address", dev_origin=self.get_device(device_id1))
         devices_group2 = self.get_devices_by_attribute("address", dev_origin=self.get_device(device_id2))
-
-        def __get_color(similarity):
-            red = int((1 - similarity) * 255)
-            green = int(similarity * 255)
-            return f"\033[38;2;{red};{green};0m"
 
         print(f"Comparing unique values between device groups for IDs {device_id1} and {device_id2}")
 
@@ -330,22 +376,13 @@ Requesting information ...""",
             for value1 in values_group1:
                 for value2 in values_group2:
                     similarity = Similarity.calculate_similarity(value1, value2, checker_fun)
-                    color = __get_color(similarity)
+                    color = self.__get_color(similarity)
                     print(f"{color}{attr.upper()}> {value1} - {value2} | Similarity: {similarity:.2f}\n\033[0m")
 
         self.print_all_timings(devices_group1 + devices_group2)
 
     def get_devices(self, ids):
         return [self.get_device(i) for i in ids]
-
-def print_dev(device_id):
-    print(ble_stats.get_device(device_id))
-
-def print_results(results):
-    for r in results:
-        print_dev(r[0])
-
-# TODO fix output: found number... (still keep original devices)
 
 # TODO original... servicedata is string? should be like manu_binary
 # TODO fix list comparison. should compare per item. if not exists, should use None for instance (UUIDS!!!)
