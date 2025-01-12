@@ -262,17 +262,20 @@ Requesting information ...""",
 
         likely_matches = sorted(likely_matches, key=lambda x: x[1], reverse=True)
 
-        return len(likely_matches) - len(original_devices)
+        return len(likely_matches) - len(original_devices), [d.id for d in original_devices]
 
     def find_interesting_random_devices(self, chunk_size=100, similarity_threshold=0.6, max_workers=8):
         devices = self.db.execute(f"SELECT id,manufacturers FROM {self.TBL_DEV} WHERE addresstype = 'random'")
 
+        covered_devices = []
         devices = [d[0] for d in devices]
         for d in devices:
-            if self.get_device(d).manufacturers == "Apple, Inc.": # Apple has way too many...
+            if d in covered_devices \ # this could exclude some but this just takes too long
+                or self.get_device(d).manufacturers == "Apple, Inc.": # Apple has way too many...
                 continue
 
-            check = self.check_similar_devices(d, chunk_size, similarity_threshold, max_workers)
+            check, devs = self.check_similar_devices(d, chunk_size, similarity_threshold, max_workers)
+            covered_devices = covered_devices + devs
             if check > 0:
                 print(f"{d}\t{check}")
 
