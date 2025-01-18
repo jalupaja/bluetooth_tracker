@@ -21,8 +21,8 @@ class Manufacturer:
         for identifier in self.data['company_identifiers']:
             if identifier['value'] == value:
                 return identifier['name']
-        return None
+        return value
 
     def parse(self, data):
-        return [self.find_by_value(l) for l in list(data)]
+        return [self.find_by_value(l) for l in data]
 
