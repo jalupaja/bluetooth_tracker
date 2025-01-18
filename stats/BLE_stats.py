@@ -203,7 +203,8 @@ Requesting information ...""",
 
         return likely_matches
 
-    def check_similar_devices(self, device_id, chunk_size=100, similarity_threshold=1.0, max_workers=8):
+    # TODO combine with above
+    def check_similar_devices(self, device_id, chunk_size=100, similarity_threshold=0.6, max_workers=8):
         def get_db_connection():
             return DB(self.db.path)
 
@@ -305,7 +306,7 @@ Requesting information ...""",
 
         device_timings.sort(key=lambda x: x[1])
         if len(devices) > 1:
-            print(f"TIMINGS FOR {len(devices)} DEVICES FROM {device_timings[0][1]} TO {device_timings[-1][2]}:")
+            print(f"TIMINGS FOR {len(devices)} DEVICES FROM {device_timings[0][1]} TO {device_timings[-1][2]} (span: {device_timings[-1][2] - device_timings[0][1]}):")
 
         for device, d_min, d_max in device_timings:
             if len(device.timings) == 1:
@@ -394,7 +395,8 @@ Requesting information ...""",
                     color = self.__get_color(similarity)
                     print(f"{color}{attr.upper()}> {value1} - {value2} | Similarity: {similarity:.2f}\n\033[0m")
 
-        self.print_all_timings(devices_group1 + devices_group2)
+        self.print_timings(devices_group1 + devices_group2)
+        # self.print_all_timings(devices_group1 + devices_group2)
 
     def get_devices(self, ids):
         return [self.get_device(i) for i in ids]
