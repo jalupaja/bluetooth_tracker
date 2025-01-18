@@ -53,7 +53,7 @@ Requesting information ...""",
             ("servicesresolved", 0.2, None), # TODO
             ("class_name", 0.3, Similarity.text),
             ("modalias", 0.6, Similarity.text),
-            ("icon", 0.7, None),
+            ("icon", 0.7, Similarity.text),
             ]
 
     def get_all_devices(self):
@@ -85,9 +85,12 @@ Requesting information ...""",
 
     def get_device(self, device_id):
 
-        dev = BLE_device(
-                self.db.execute(f"SELECT * FROM {self.TBL_DEV} WHERE id = '{device_id}'")[0]
-                )
+        res = self.db.execute(f"SELECT * FROM {self.TBL_DEV} WHERE id = '{device_id}'")
+
+        if len(res) <= 0:
+            return None
+
+        dev = BLE_device(res[0])
 
         dev.add_timings(self.db.execute(f"""SELECT t.timestamp, t.geolocation FROM {self.TBL_TIME} t
                             INNER JOIN {self.TBL_DEV_TIME} dt ON t.id = dt.time_id
@@ -128,7 +131,7 @@ Requesting information ...""",
 
         return similarity_score / total_weight if total_weight > 0 else 0
 
-    def find_similar_devices(self, device_id, chunk_size=100, similarity_threshold=1.0, max_workers=8):
+    def find_similar_devices(self, device_id, chunk_size=100, similarity_threshold=0.6, max_workers=8):
         def get_db_connection():
             return DB(self.db.path)
 
@@ -269,8 +272,8 @@ Requesting information ...""",
 
         covered_devices = []
         devices = [d[0] for d in devices]
-        for d in devices:
-            if d in covered_devices \ # this could exclude some but this just takes too long
+        for d in devices: # this could exclude some but this just takes too long
+            if d in covered_devices \
                 or self.get_device(d).manufacturers == "Apple, Inc.": # Apple has way too many...
                 continue
 
@@ -354,6 +357,13 @@ Requesting information ...""",
     def compare_devices_groups(self, device_id1, device_id2):
         devices_group1 = self.get_devices_by_attribute("address", dev_origin=self.get_device(device_id1))
         devices_group2 = self.get_devices_by_attribute("address", dev_origin=self.get_device(device_id2))
+
+        if not devices_group1:
+            print(f"The first group was not found!")
+            return
+        if not devices_group2:
+            print(f"The second group was not found!")
+            return
 
         print(f"Comparing unique values between device groups for IDs {device_id1} and {device_id2}")
 
