@@ -158,6 +158,7 @@ Requesting information ...""",
                     )
                     similarity_sum += similarity
 
+                similarity_sum = similarity_sum / len(original_devices)
                 if similarity_sum >= similarity_threshold:
                     likely_matches_chunk.append((random_device.id, similarity_sum))
                     # print(f"Likely match found: Device ID = {random_device.id}, Similarity = {similarity_sum:.2f}")
@@ -229,6 +230,7 @@ Requesting information ...""",
                     )
                     similarity_sum += similarity
 
+                similarity_sum = similarity_sum / len(original_devices)
                 if similarity_sum >= similarity_threshold:
                     likely_matches_chunk.append((random_device.id, similarity_sum))
                     # print(f"Likely match found: Device ID = {random_device.id}, Similarity = {similarity_sum:.2f}")

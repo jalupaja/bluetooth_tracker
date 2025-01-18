@@ -91,8 +91,11 @@ class Similarity:
         if num1 == num2:
             return 1.0
 
-        num1 = int(num1)
-        num2 = int(num2)
+        try:
+            num1 = int(num1)
+            num2 = int(num2)
+        except:
+            return 0
 
         if DEBUG:
             print(f"num: {num1} : {num2} -> {1 - abs(num1 - num2) / max(abs(num1), abs(num2))}")
