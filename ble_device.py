@@ -66,28 +66,31 @@ class BleDevice:
         else:
             return None
 
+    def __str__(self):
+        res = ""
+        res += f"{self.name} ({self.address})\n"
+        res += f"\taddresstype: \t\t{self.addresstype}\n"
+        res += f"\talias: \t\t\t{self.alias}\n"
+        res += f"\tAppearance: \t\t{self.appearance}\n"
+        res += f"\tpaired: \t\t{self.paired}\n"
+        res += f"\tbonded: \t\t{self.bonded}\n"
+        res += f"\ttrusted: \t\t{self.trusted}\n"
+        res += f"\tblocked: \t\t{self.blocked}\n"
+        res += f"\tlegacypairing: \t\t{self.legacypairing}\n"
+        res += f"\trssi: \t\t\t{self.rssi}\n"
+        res += f"\tconnected: \t\t{self.connected}\n"
+        res += f"\tuuids: \t\t\t{self.uuids}\n"
+        res += f"\tmanufacturers: \t\t{self.manufacturers}\n"
+        res += f"\tmanufacturer_binary: \t{self.manufacturer_binary}\n"
+        res += f"\ttxpower: \t\t{self.txpower}\n"
+        res += f"\tservicesresolved: \t{self.servicesresolved}\n"
+        res += f"\tclass: \t\t\t{self.class_name}\n"
+        res += f"\tmodalias: \t\t{self.modalias}\n"
+        res += f"\ticon: \t\t\t{self.icon}\n"
+
+        return res
+
     def print(self):
+        print(self)
 
-        print()
-        print(f"{self.name} ({self.address})")
-        print(f"\taddresstype: \t\t{self.addresstype}")
-        print(f"\talias: \t\t\t{self.alias}")
-        print(f"\tAppearance: \t\t{self.appearance}")
-        print(f"\tpaired: \t\t{self.paired}")
-        print(f"\tbonded: \t\t{self.bonded}")
-        print(f"\ttrusted: \t\t{self.trusted}")
-        print(f"\tblocked: \t\t{self.blocked}")
-        print(f"\tlegacypairing: \t\t{self.legacypairing}")
-        print(f"\trssi: \t\t\t{self.rssi}")
-        print(f"\tconnected: \t\t{self.connected}")
-        print(f"\tuuids: \t\t\t{self.uuids}")
-        print(f"\tmanufacturers: \t\t{self.manufacturers}")
-        print(f"\tmanufacturer_binary: \t{self.manufacturer_binary}")
-        print(f"\ttxpower: \t\t{self.txpower}")
-        print(f"\tservicesresolved: \t{self.servicesresolved}")
-        print(f"\tclass: \t\t\t{self.class_name}")
-        print(f"\tmodalias: \t\t{self.modalias}")
-        print(f"\ticon: \t\t\t{self.icon}")
-
-        print()
 
