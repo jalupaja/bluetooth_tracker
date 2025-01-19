@@ -24,6 +24,7 @@ class TUITable:
         table.add_column("Manufacturer", justify="left", style="yellow")
         table.add_column("Device Type", justify="left", style="magenta")
         table.add_column("Address", justify="left", style="cyan", no_wrap=True)
+        table.add_column("RSSI", justify="let", style="yellow")
         table.add_column("Last Seen (s)", justify="right", style="green")
         return table
 
@@ -34,6 +35,7 @@ class TUITable:
             'device_type': "TODO", # TODO
             # 'device_type': ble_device.device_type,
             'address': ble_device.address,
+            'rssi': ble_device.rssi,
             'last_update': datetime.now(),
             'uuids': ble_device.uuids,
         }
@@ -92,6 +94,7 @@ class TUITable:
                     Text(f"{entry['manufacturer']}", style=None),
                     Text(f"{entry['device_type']}", style=None),
                     Text(f"{entry['address']}", style=None),
+                    Text(f"{entry['rssi']}", style=None),
                     Text(f"{int(last_seen)}", style=age_color),
                 )
 
