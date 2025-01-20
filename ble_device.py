@@ -24,10 +24,16 @@ class BleDevice:
         self.blocked = self.__in_props("Blocked")
         self.servicedata = self.__in_props("ServiceData"),
         if self.servicedata is not None:
-            self.servicedata = str(self.servicedata)
+            if self.servicedata[0]:
+                res = {}
+                for k, v in self.servicedata[0].items():
+                    res[k] = str(v.hex())
+                self.servicedata = str(res)
+            else:
+                self.servicedata = "None"
         self.advertisingflags = self.__in_props("AdvertisingFlags"),
         if self.advertisingflags is not None:
-            self.advertisingflags = str(self.advertisingflags)
+            self.advertisingflags = str(self.advertisingflags[0].hex())
         self.legacypairing = self.__in_props("LegacyPairing")
         self.rssi = self.__in_props("RSSI")
         self.connected = self.__in_props("Connected")
