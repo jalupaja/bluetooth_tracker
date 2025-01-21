@@ -32,8 +32,7 @@ class TUITable:
         new_data = {
             'name': ble_device.name,
             'manufacturer': ble_device.manufacturers,
-            'device_type': "TODO", # TODO
-            # 'device_type': ble_device.device_type,
+            'device_type': ble_device.device_type,
             'address': ble_device.address,
             'rssi': ble_device.rssi,
             'last_update': datetime.now(),

@@ -20,6 +20,59 @@ class BLE_device:
         self.timings = []
         self.services: [BT_service] = []
 
+        self.device_type = self.__parse_device_type()
+
+    def __parse_device_type(self):
+        """
+        Parse the device type using information gathered from the device
+        sources:
+            https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-cdp/77b446d0-8cea-4821-ad21-fabdf4d9a569?redirectedfrom=MSDN
+        """
+        if self.manufacturer_binary and len(self.manufacturer_binary) >= 4:
+            # TODO rename
+            manu_info = self.manufacturer_binary[0:2]
+            manu_info_back = self.manufacturer_binary[0:2]
+            if self.manufacturers == "Apple, Inc.":
+                if manu_info in ["12", "07"]:
+                    return "Apple AirTag"
+                elif manu_info == "02":
+                    return "Mac"
+                elif manu_info_back == "06":
+                    return "IPhone"
+                elif manu_info_back == "07":
+                    return "IPad"
+                else:
+                    return "TODO" # TODO
+            elif self.manufacturers == "Microsoft":
+                if manu_info_back == "01":
+                    return "XBox"
+                elif manu_info_back == "09":
+                    return "Windows Desktop"
+                elif manu_info_back in ["0a"]:
+                    return "Windows Phone"
+                elif manu_info_back in ["0c"]:
+                    return "Windows IoT"
+                elif manu_info_back in ["0d"]:
+                    return "Surface Hub"
+                elif manu_info_back in ["0e"]:
+                    return "Windows laptop"
+                elif manu_info_back in ["0f"]:
+                    return "Windows tablet"
+        elif self.icon == "phone":
+            return "Phone"
+        elif self.icon == "computer":
+            return "Computer"
+        elif self.icon in ["audio-headset", "audio-headphones"]:
+            return "Headphones"
+        elif self.icon == "audio-card":
+            return "Audio card"
+        elif self.icon == "input-mouse":
+            return "Mouse"
+        elif self.icon == "printer":
+            return "Printer"
+        elif self.icon == "input-keyboard":
+            return "Keyboard"
+
     def __getitem__(self, item):
         # not nice but makes things so much easier
         return eval(f"self.{item}")

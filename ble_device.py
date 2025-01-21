@@ -66,11 +66,64 @@ class BleDevice:
         if self.address != None and self.address2 != None and self.address != self.address2:
             log.warning(f"Addresses don't match: {self.address} - {self.address2}")
 
+        self.device_type = self.__parse_device_type()
+
     def __in_props(self, search):
         if self.props != None and search in self.props:
             return self.props[search]
         else:
             return None
+
+    def __parse_device_type(self):
+        """
+        Parse the device type using information gathered from the device
+        sources:
+            https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-cdp/77b446d0-8cea-4821-ad21-fabdf4d9a569?redirectedfrom=MSDN
+        """
+        if self.manufacturer_binary and len(self.manufacturer_binary) >= 4:
+            # TODO rename
+            manu_info = self.manufacturer_binary[0:2]
+            manu_info_back = self.manufacturer_binary[0:2]
+            if self.manufacturers == "Apple, Inc.":
+                if manu_info in ["12", "07"]:
+                    return "Apple AirTag"
+                elif manu_info == "02":
+                    return "Mac"
+                elif manu_info_back == "06":
+                    return "IPhone"
+                elif manu_info_back == "07":
+                    return "IPad"
+                else:
+                    return "TODO" # TODO
+            elif self.manufacturers == "Microsoft":
+                if manu_info_back == "01":
+                    return "XBox"
+                elif manu_info_back == "09":
+                    return "Windows Desktop"
+                elif manu_info_back in ["0a"]:
+                    return "Windows Phone"
+                elif manu_info_back in ["0c"]:
+                    return "Windows IoT"
+                elif manu_info_back in ["0d"]:
+                    return "Surface Hub"
+                elif manu_info_back in ["0e"]:
+                    return "Windows laptop"
+                elif manu_info_back in ["0f"]:
+                    return "Windows tablet"
+        elif self.icon == "phone":
+            return "Phone"
+        elif self.icon == "computer":
+            return "Computer"
+        elif self.icon in ["audio-headset", "audio-headphones"]:
+            return "Headphones"
+        elif self.icon == "audio-card":
+            return "Audio card"
+        elif self.icon == "input-mouse":
+            return "Mouse"
+        elif self.icon == "printer":
+            return "Printer"
+        elif self.icon == "input-keyboard":
+            return "Keyboard"
 
     def __str__(self):
         res = ""
