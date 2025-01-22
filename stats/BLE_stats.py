@@ -5,9 +5,9 @@ from difflib import SequenceMatcher
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
-from BLE_device import BLE_device
-from db import DB
-from Similarity import Similarity
+from stats.BLE_device import BLE_device
+from stats.db import DB
+from stats.Similarity import Similarity
 
 class BLE_stats:
     TBL_TIME = "time"
