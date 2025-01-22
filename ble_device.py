@@ -1,6 +1,7 @@
 import datetime
 
 from manufacturers import Manufacturer
+from device_classes import CoD
 import log
 
 class BleDevice:
@@ -48,7 +49,7 @@ class BleDevice:
             self.manufacturer_binary = ",".join([b.hex() for b in list(manu_data.values())])
         self.txpower = self.__in_props("TxPower")
         self.servicesresolved = self.__in_props("ServicesResolved")
-        self.class_name = self.__in_props("Class")
+        self.class_of_device = self.__in_props("Class")
         self.modalias = self.__in_props("Modalias")
         self.icon = self.__in_props("Icon")
         self.timestamp = str(datetime.datetime.now().replace(microsecond=0)) # timestamp in seconds
@@ -80,37 +81,43 @@ class BleDevice:
         sources:
             https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-cdp/77b446d0-8cea-4821-ad21-fabdf4d9a569?redirectedfrom=MSDN
         """
+
         if self.manufacturer_binary and len(self.manufacturer_binary) >= 4:
             # TODO rename
-            manu_info = self.manufacturer_binary[0:2]
-            manu_info_back = self.manufacturer_binary[0:2]
+            manu_nibble = self.manufacturer_binary[0:2]
+            manu_nibble_2 = self.manufacturer_binary[0:2]
             if self.manufacturers == "Apple, Inc.":
-                if manu_info in ["12", "07"]:
+                if manu_nibble in ["12", "07"]:
                     return "Apple AirTag"
-                elif manu_info == "02":
+                elif manu_nibble == "02":
                     return "Mac"
-                elif manu_info_back == "06":
+                elif manu_nibble_2 == "06":
                     return "IPhone"
-                elif manu_info_back == "07":
+                elif manu_nibble_2 == "07":
                     return "IPad"
-                else:
-                    return "TODO" # TODO
-            elif self.manufacturers == "Microsoft":
-                if manu_info_back == "01":
+
+            if self.manufacturers == "Microsoft":
+                if manu_nibble_2 == "01":
                     return "XBox"
-                elif manu_info_back == "09":
+                elif manu_nibble_2 == "09":
                     return "Windows Desktop"
-                elif manu_info_back in ["0a"]:
+                elif manu_nibble_2 in ["0a"]:
                     return "Windows Phone"
-                elif manu_info_back in ["0c"]:
+                elif manu_nibble_2 in ["0c"]:
                     return "Windows IoT"
-                elif manu_info_back in ["0d"]:
+                elif manu_nibble_2 in ["0d"]:
                     return "Surface Hub"
-                elif manu_info_back in ["0e"]:
+                elif manu_nibble_2 in ["0e"]:
                     return "Windows laptop"
-                elif manu_info_back in ["0f"]:
+                elif manu_nibble_2 in ["0f"]:
                     return "Windows tablet"
-        elif self.icon == "phone":
+
+        if self.class_of_device:
+            cod_string = CoD().parse(self.class_of_device)[0]
+            if cod_string:
+                return cod_string
+
+        if self.icon == "phone":
             return "Phone"
         elif self.icon == "computer":
             return "Computer"
@@ -143,7 +150,7 @@ class BleDevice:
         res += f"\tmanufacturer_binary: \t{self.manufacturer_binary}\n"
         res += f"\ttxpower: \t\t{self.txpower}\n"
         res += f"\tservicesresolved: \t{self.servicesresolved}\n"
-        res += f"\tclass: \t\t\t{self.class_name}\n"
+        res += f"\tclass: \t\t\t{self.class_of_device}\n"
         res += f"\tmodalias: \t\t{self.modalias}\n"
         res += f"\ticon: \t\t\t{self.icon}\n"
 

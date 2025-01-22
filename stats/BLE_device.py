@@ -1,4 +1,5 @@
 import datetime
+from device_classes import CoD
 
 class BLE_device:
     def __init__(self, struct):
@@ -6,7 +7,7 @@ class BLE_device:
             self.id, self.name, self.name2, self.address, self.address2, self.addresstype,
             self.alias, self.appearance, self.paired, self.bonded, self.trusted, self.blocked, self.legacypairing,
             self.connected, self.uuids, self.manufacturers, self.manufacturer_binary, self.servicedata,
-            self.advertisingflags, self.txpower, self.servicesresolved, self.class_name, self.modalias,
+            self.advertisingflags, self.txpower, self.servicesresolved, self.class_of_device, self.modalias,
             self.icon
         ) = struct
 
@@ -34,15 +35,14 @@ class BLE_device:
             manu_info_back = self.manufacturer_binary[0:2]
             if self.manufacturers == "Apple, Inc.":
                 if manu_info in ["12", "07"]:
-                    return "Apple AirTag"
+                    return "AirTag"
                 elif manu_info == "02":
                     return "Mac"
                 elif manu_info_back == "06":
                     return "IPhone"
                 elif manu_info_back == "07":
                     return "IPad"
-                else:
-                    return "TODO" # TODO
+
             elif self.manufacturers == "Microsoft":
                 if manu_info_back == "01":
                     return "XBox"
@@ -58,7 +58,13 @@ class BLE_device:
                     return "Windows laptop"
                 elif manu_info_back in ["0f"]:
                     return "Windows tablet"
-        elif self.icon == "phone":
+
+        if self.class_of_device:
+            cod_string = CoD().parse(self.class_of_device)[0]
+            if cod_string:
+                return cod_string
+
+        if self.icon == "phone":
             return "Phone"
         elif self.icon == "computer":
             return "Computer"
@@ -78,7 +84,7 @@ class BLE_device:
         return eval(f"self.{item}")
 
     def get_attributes(self):
-        return ["name", "name2", "address", "address2", "addresstype", "alias", "appearance", "legacypairing", "uuids", "manufacturers", "manufacturer_binary", "servicedata", "advertisingflags", "servicesresolved", "class_name", "modalias", "icon"]
+        return ["name", "name2", "address", "address2", "addresstype", "alias", "appearance", "legacypairing", "uuids", "manufacturers", "manufacturer_binary", "servicedata", "advertisingflags", "servicesresolved", "class_of_device", "modalias", "icon"]
 
     def __parse_timings(self, timings):
         ret = []
