@@ -6,11 +6,11 @@ from lib.device_classes import CoD
 from lib.log import log
 
 class ble_device:
-    def __init__(self, data):
-        if isinstance(data, BLEDevice):
-            self.__init_new_device(data)
-        elif isinstance(data, tuple):
-            self.__init_db_device(data)
+    def __init__(self, device):
+        if isinstance(device, BLEDevice):
+            self.__init_new_device(device)
+        elif isinstance(device, tuple):
+            self.__init_db_device(device)
         else:
             log.error("wrong input for ble_device")
 
@@ -32,19 +32,26 @@ class ble_device:
         self.trusted = self.__in_props("Trusted")
         self.blocked = self.__in_props("Blocked")
         self.servicedata = self.__in_props("ServiceData"),
-        if self.servicedata is not None:
-            if self.servicedata[0]:
-                res = {}
-                for k, v in self.servicedata[0].items():
-                    res[k] = str(v.hex())
-                self.servicedata = str(res)
-            else:
-                self.servicedata = None
+        if self.servicedata and self.servicedata[0]:
+            res = {}
+            for k, v in self.servicedata[0].items():
+                res[k] = str(v.hex())
+            self.servicedata = str(res)
+        else:
+            self.servicedata = None
         self.advertisingflags = self.__in_props("AdvertisingFlags"),
         if self.advertisingflags and self.advertisingflags[0]:
             self.advertisingflags = self.advertisingflags[0].hex()
         else:
             self.advertisingflags = None
+        self.advertisingdata = self.__in_props("AdvertisingData"),
+        if self.advertisingdata and self.advertisingdata[0]:
+            res = {}
+            for k, v in self.advertisingdata[0].items():
+                res[k] = str(v.hex())
+            self.advertisingdata = str(res)
+        else:
+            self.advertisingdata = None
         self.legacypairing = self.__in_props("LegacyPairing")
         self.rssi = self.__in_props("RSSI")
         self.connected = self.__in_props("Connected")
@@ -67,7 +74,7 @@ class ble_device:
 
         self.props = self.details['props']
 
-        done_props = "Class", "Modalias", "Icon", "Name", "Address", "AddressType", "Alias", "Appearance", "Paired", "Bonded", "Trusted", "Blocked", "LegacyPairing", "RSSI", "Connected", "UUIDs", "ManufacturerData", "ServiceData", "AdvertisingFlags", "TxPower", "ServicesResolved", "Adapter"
+        done_props = "Class", "Modalias", "Icon", "Name", "Address", "AddressType", "Alias", "Appearance", "Paired", "Bonded", "Trusted", "Blocked", "LegacyPairing", "RSSI", "Connected", "UUIDs", "ManufacturerData", "ServiceData", "AdvertisingFlags", "AdvertisingData", "TxPower", "ServicesResolved", "Adapter"
 
         missing_props = [p for p in self.props if p not in done_props]
         if missing_props:
@@ -90,7 +97,7 @@ class ble_device:
             self.id, self.name, self.name2, self.address, self.address2, self.addresstype,
             self.alias, self.appearance, self.paired, self.bonded, self.trusted, self.blocked, self.legacypairing,
             self.connected, self.uuids, self.manufacturers, self.manufacturer_binary, self.servicedata,
-            self.advertisingflags, self.txpower, self.servicesresolved, self.class_of_device, self.modalias,
+            self.advertisingflags, self.advertisingdata, self.txpower, self.servicesresolved, self.class_of_device, self.modalias,
             self.icon
         ) = struct
 
@@ -107,7 +114,7 @@ class ble_device:
         self.device_type = self.__parse_device_type()
 
     def get_attributes(self):
-        return ["name", "name2", "address", "address2", "addresstype", "alias", "appearance", "legacypairing", "uuids", "manufacturers", "manufacturer_binary", "servicedata", "advertisingflags", "servicesresolved", "class_of_device", "modalias", "icon"]
+        return ["name", "name2", "address", "address2", "addresstype", "alias", "appearance", "legacypairing", "uuids", "manufacturers", "manufacturer_binary", "servicedata", "advertisingflags", "advertisingdata", "servicesresolved", "class_of_device", "modalias", "icon"]
 
     def __parse_device_type(self):
         """

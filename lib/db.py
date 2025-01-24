@@ -13,11 +13,13 @@ class DB:
     def __init__(self, path):
         self.path = path
         self.con = sqlite3.connect(path, check_same_thread=False)
-        self.cur = self.con.cursor()
+        self.cur = None
 
     def __del__(self):
-        self.con.commit()
-        self.con.close()
+        if self.con:
+            self.con.commit()
+            self.con.close()
+            self.con = None
 
     def get_tables(self):
         tables = self.execute("SELECT name FROM sqlite_master WHERE type='table'")
@@ -27,17 +29,30 @@ class DB:
         columns_info = self.execute(f"PRAGMA table_info({table})")
         return [col[1] for col in columns_info]
 
-    def get_lastrowid(self):
-        return self.cur.lastrowid
+    def _update_cursor(self):
+        if self.cur:
+            self.cur.close()
+        self.cur = self.con.cursor()
 
     def execute(self, query, *args):
+        self._update_cursor()
         if len(args) > 0:
             self.cur.execute(query, *args)
         else:
             self.cur.execute(query)
         return self.cur.fetchall()
 
+    def execute_rowid(self, query, *args):
+        self._update_cursor()
+        if len(args) > 0:
+            self.cur.execute(query, *args)
+        else:
+            self.cur.execute(query)
+        self.commit()
+        return self.cur.lastrowid
+
     def execute_single(self, query, *args):
+        self._update_cursor()
         if len(args) > 0:
             self.cur.execute(query, *args)
         else:
@@ -113,6 +128,7 @@ class BluetoothDatabase:
                         manufacturer_binary BLOB,
                         ServiceData TEXT,
                         AdvertisingFlags BLOB,
+                        AdvertisingData BLOB,
                         txpower INTEGER,
                         servicesresolved BOOLEAN,
                         class_of_device BLOB,
@@ -192,11 +208,9 @@ class BluetoothDatabase:
         try:
             data = self.__select_exactly__(table, columns)
             if (data is None or len(data) <= 0):
-                self.db.execute(f"""INSERT OR IGNORE INTO {table} ({", ".join([col for col in columns.keys()])})
+                return self.db.execute_rowid(f"""INSERT OR IGNORE INTO {table} ({", ".join([col for col in columns.keys()])})
                                VALUES ({", ".join(['?'] * len(columns))});""",
                                list(columns.values()))
-                self.db.commit()
-                return self.db.get_lastrowid()
             else:
                 return data[0]
 
@@ -206,6 +220,7 @@ class BluetoothDatabase:
         return None
 
     def insert_bluetooth_device(self, device: bt_device):
+        log.info(f"found Bluetooth device: {device.address} {device.name}")
         time_data = {"timestamp": device.timestamp,
                      "geolocation": device.geolocation,
                      }
@@ -237,6 +252,7 @@ class BluetoothDatabase:
         log.debug(f"Device {device.name} ({device.address}) inserted into the database.")
 
     def insert_ble_device(self, device: ble_device):
+        log.info(f"found BLE device: {device.address} {device.name}")
         time_data = {"timestamp": device.timestamp,
                      "geolocation": device.geolocation,
                      }
@@ -263,6 +279,7 @@ class BluetoothDatabase:
                 'manufacturer_binary': device.manufacturer_binary,
                 'ServiceData': device.servicedata,
                 'AdvertisingFlags': device.advertisingflags,
+                'AdvertisingData': device.advertisingdata,
                 'txpower': device.txpower,
                 'servicesresolved': device.servicesresolved,
                 'class_of_device': device.class_of_device,
@@ -283,52 +300,4 @@ class BluetoothDatabase:
 
     def close(self):
         self.db.close()
-
-# TODO should use scanners callback function
-class Exporter:
-    def __init__(self, db_file_path):
-        self.db = BluetoothDatabase(db_file_path)
-        self.export = True
-        self.bluetooth_devices = []
-        self.ble_devices = []
-
-    def add_bluetooth_devices(self, device: bt_device):
-        if export_all_objects:
-            self.export_object(device, f"export/bluetooth/{device.timestamp}-{device.address}")
-        self.bluetooth_devices.append(device)
-
-    def add_ble_devices(self, device: ble_device):
-        if export_all_objects:
-            self.export_object(device, f"export/ble/{device.timestamp}-{device.address}")
-        self.ble_devices.append(device)
-
-    def export_object(self, obj, file_name):
-        with open(f"{file_name}.pk1", 'wb') as f:
-            pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
-
-    def import_object(self, file_name):
-        with open(file_name, 'rb') as f:
-            return pickle.load(f)
-
-    def export_devices(self):
-        while self.export:
-            while len(self.bluetooth_devices) > 0:
-                log.debug("Exporting bluetooth device")
-                self.db.insert_bluetooth_device(self.bluetooth_devices.pop())
-
-            while len(self.ble_devices) > 0:
-                log.debug("Exporting ble device")
-                self.db.insert_ble_device(self.ble_devices.pop())
-
-            time.sleep(1)
-
-    def start_exporting(self):
-        log.debug("Exporting Thread started")
-        scan_thread = threading.Thread(target=self.export_devices)
-        scan_thread.daemon = True
-        scan_thread.start()
-
-    def stop_exporting(self):
-        self.export = False
-        log.debug("Exporting Thread stopped")
 

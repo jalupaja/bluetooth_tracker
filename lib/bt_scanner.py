@@ -2,14 +2,15 @@ import bluetooth
 import threading
 import time
 import subprocess
-import log
 from concurrent.futures import ThreadPoolExecutor
+
+from lib.log import log
 from lib.bt_device import bt_device
-from lib.db import Exporter
+from lib.db import BluetoothDatabase
 
 class bt_scanner:
-    def __init__(self, exporter: Exporter):
-        self.exporter = exporter
+    def __init__(self, db: BluetoothDatabase):
+        self.db = db
         self.scanning = True
         self.executor = ThreadPoolExecutor(max_workers=10)
 
@@ -45,13 +46,13 @@ class bt_scanner:
             log.debug(f"Error retrieving services for Bluetooth device {address}: {e}")
 
         # Fetch the device class and other information using `hcitool`
-        device = self.get_device_class_and_info(address, name)
+        device = self.get_hci_info(address, name)
 
         device.add_services(services)
 
-        self.exporter.add_bluetooth_devices(device)
+        self.db.insert_bluetooth_device(device)
 
-    def get_device_class_and_info(self, address, name): # TODO rename
+    def get_hci_info(self, address, name):
         try:
             result = subprocess.run(['hcitool', 'info', address], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             output = result.stdout.decode()
@@ -113,12 +114,12 @@ class bt_scanner:
             # TODO
             time.sleep(3)
 
-    def start_scanning(self):
+    def scan(self):
         scan_thread = threading.Thread(target=self.scan_bluetooth_devices)
         scan_thread.daemon = True
         scan_thread.start()
 
-    def stop_scanning(self):
+    def stop(self):
         self.scanning = False
         log.debug("Bluetooth Scanning stopped.")
 

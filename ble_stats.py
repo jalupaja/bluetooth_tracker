@@ -9,7 +9,7 @@ from lib.ble_device import ble_device
 from lib.db import DB
 from lib.similarity import similarity
 
-class BLE_stats:
+class ble_stats:
     TBL_TIME = "time"
     TBL_DEV = "ble_device"
     TBL_DEV_TIME = "ble_device_time"
@@ -400,38 +400,4 @@ Requesting information ...""",
     def get_devices(self, ids):
         return [self.get_device(i) for i in ids]
 
-# TODO original... servicedata is string? should be like manu_binary
-# TODO fix list comparison. should compare per item. if not exists, should use None for instance (UUIDS!!!)
-# TODO TESTING
-DB_PATH = "../db/db.db"
-db = DB(DB_PATH)
-
-ble = BLE_stats(db)
-# DB_PATH = "../db/2024.db"
-# [print(b) for b in ble.search_device("Apple")]
-# results = ble.find_similar_devices(device_id=23453)
-# result = ble.find_similar_devices(8102, similarity_threshold=1.0)
-# result = ble.find_similar_devices(18656, similarity_threshold=1.0)
-# ids = [r[0] for r in result]
-# interesting_devices = [ble.get_device(i) for i in ids[0:30]]
-# ble.print_unique_attrs(interesting_devices)
-
-# DB_PATH = "../db/38c3.db"
-# devices = ble.find_interesting_devices()
-# devices = ble.get_all_devices()
-# device_ids = [d[0] for d in devices]
-# summaries = []
-# for device_id in device_ids:
-#     ble.parse_id(device_id)
-#     summaries.append(ble.summary)
-#     if ble.interest_score > 4:
-#         print(f"device id {device_id}: {ble.interest_score}")
-dev = ble.find_similar_devices(69179, similarity_threshold=0.15)
-# dev = ble.find_similar_devices(25501, similarity_threshold=0.30)
-# devices = [ble.get_device(d[0]) for d in dev]
-# ble.print_all_timings(devices)
-# print(ble.get_device(25501))
-
-# dev = [ble.get_devices_by_attribute("address", d) for d in devices_in_2_places]
-# ids = [[d.id for d in x] for x in dev]
-# ids_in_3_places
+DB_PATH = "db/2024.db"

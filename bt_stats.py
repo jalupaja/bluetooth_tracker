@@ -4,9 +4,9 @@ from collections import Counter
 from tabulate import tabulate
 
 from lib.bt_device import bt_device
-from db import DB
+from lib.db import DB
 
-class BT_stats:
+class bt_stats:
     TBL_TIME = "time"
     TBL_DEV = "bluetooth_device"
     TBL_SVC = "bluetooth_service"
@@ -171,37 +171,6 @@ def arr_sel(arr: np.ndarray, names: list, sel_names: list):
     indexes = [names.index(s) for s in sel_names]
     return arr[indexes]
 
-DB_PATH = "../db.db"
+DB_PATH = "db/2024.db"
 db = DB(DB_PATH)
-
-# TODO TESTING
-bt = BT_stats(db)
-devices = bt.get_all_devices()
-device_ids = [d[0] for d in devices]
-summaries = []
-for device_id in device_ids:
-    bt.parse_id(device_id)
-    summaries.append(bt.summary)
-    if bt.interest_score > 4:
-        print(f"device id {device_id}: {bt.interest_score}")
-
-# TODO only "important" parse_attr...
-# TODO check rest if found devices are always same or if different devices have similar attributes (list original_devices(ids), mb save all lists, compare all)
-# print(bt.search_device("HUAWEI P30 Pro"))
-# bt.parse_id(50)
-
-# print(bt.interest_score)
-# print(bt.summary)
-# bt.set_addr(addr)
-
-# print(bt)
-
-# db.db
-# 6: 150, 126, 80
-# 5: 87, 96, 99, 103, 104, 116, 127, 130, 143, 144, 145, 148, 149
-
-# bt.parse_id(126)
-# print(bt.interest_score)
-# print(bt.summary)
-# bt.set_addr(addr)
-
+bt = bt_stats(db)

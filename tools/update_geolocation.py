@@ -1,5 +1,5 @@
 from datetime import datetime
-from db import DB
+from lib.db import DB
 
 def update_geolocation(db, date, start_time, end_time, new_geolocation):
     start_time = f"{date} {start_time}"

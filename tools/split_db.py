@@ -1,6 +1,6 @@
 import sqlite3
 
-source_db = "../db/db.BAK"
+source_db = "db/db.BAK"
 target_db = "/tmp/test.db"
 
 lower_date = "2024-12-28"
