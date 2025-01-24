@@ -1,4 +1,4 @@
-# Bluetooth tracker
+# Bluetooth scanner
 > This is a WIP project with the goal of tracking Bluetooth devices
 
 ## Current Capabilities
@@ -10,38 +10,55 @@
 `source .venv/bin/activate`
 `pip install -r requirements.txt`
 
+### Installation using nix-shell
+`nix-shell`
+
 ## create Systemd Service
 `./create_service.sh`
 `sudo systemctl status bluetooth_tracker`
 
 ## Usage
-`python scanner.py`
+`python -m scanner`
 
 # signal strength
 > A TUI + GUI program to show the signal strength to a device in a live Graph
 
 ## Usage
-`python signal_strength.py`
+`python -m signal_strength`
 
 # stats
 > stats is a separate project, supporting the first one by providing functions to analyse the Bluetooth tracker's database
 
 - This is mostly a dump of tools I needed
 
-## BT\_stats.py
+## bt\_stats.py
 > A script to correlate Bluetooth devices
 
-## BLE\_stats.py
+`python -m bt_stats`
+
+## ble\_stats.py
 > A script to correlate Bluetooth Low Energy devices with or without a random Address
 
-## split\_db.py
-> A script to split a too large database for faster
+`python -m ble_stats`
 
-## update\_geolocation.python
-> A script to update the geolocation manually per timespan
+# tools
+> scripts to help me manage my databases
+- split\_db.py
+- fix\_table.py
+- fix update\_geolocation.py
 
-## helper classes
-- Similarity.py
-- BT_device.py
-- BLE_device.py
+`python -m tools.split_db`
+
+# lib
+> Tools, needed for above programs
+
+- bt\_device.py
+- bt\_scanner.py
+- ble\_device.py
+- ble\_scanner.py
 - db.py
+- manufacturers.py
+- device\_classes.py
+- similarity.py
+- log.py
+- UI.py

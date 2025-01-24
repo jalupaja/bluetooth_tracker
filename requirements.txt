@@ -1,6 +1,6 @@
 bleak
-pyyaml
 pybluez
+pyyaml
 numpy
 pandas
 rich
