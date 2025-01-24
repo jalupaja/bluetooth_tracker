@@ -4,34 +4,28 @@ import time
 import subprocess
 import log
 from concurrent.futures import ThreadPoolExecutor
-from bluetooth_device import BluetoothDevice
-from db import Exporter
+from lib.bt_device import bt_device
+from lib.db import Exporter
 
-class BluetoothScanner:
+class bt_scanner:
     def __init__(self, exporter: Exporter):
         self.exporter = exporter
         self.scanning = True
-        self.devices = []
         self.executor = ThreadPoolExecutor(max_workers=10)
 
-    def get_device_info(self, device):
-        log.debug(f"Fetching detailed information for Bluetooth device: {device.address}")
+    def get_device_info(self, address, name):
+        log.debug(f"Fetching detailed information for Bluetooth device: {address}")
 
         try:
-            device_name = bluetooth.lookup_name(device.address, timeout=5)
-            if device_name is None:
-                device_name = None
+            name = bluetooth.lookup_name(address, timeout=5)
         except Exception as e:
-            device_name = None
-            log.debug(f"Error retrieving Bluetooth device name for {device.address}: {e}")
+            log.debug(f"Error retrieving Bluetooth device name for {address}: {e}")
 
-        device.name = device_name
-
+        services = []
         try:
-            services = bluetooth.find_service(address=device.address)
-            print(services)
-            if services:
-                for service in services:
+            found_services = bluetooth.find_service(address=address)
+            if found_services:
+                for service in found_services:
 
                     service_info = {
                         'host': service['host'],
@@ -44,26 +38,20 @@ class BluetoothScanner:
                         'protocol': service['protocol'],
                         'port': service['port']
                     }
-                    device.add_service(service_info)
+                    services.append(service_info)
             else:
                 log.debug("No Bluetooth services found.")
         except Exception as e:
-            log.debug(f"Error retrieving services for Bluetooth device {device.address}: {e}")
+            log.debug(f"Error retrieving services for Bluetooth device {address}: {e}")
 
         # Fetch the device class and other information using `hcitool`
-        device_class, manufacturer, version, hci_version, lmp_version, device_type, device_id, extra_info = self.get_device_class_and_info(device.address)
-        device.update_device_class(device_class)
-        device.set_manufacturer(manufacturer)
-        device.set_version(version)
-        device.set_hci_version(hci_version)
-        device.set_lmp_version(lmp_version)
-        device.set_device_type(device_type)
-        device.set_device_id(device_id)
-        device.set_extra_hci_info(extra_info)
+        device = self.get_device_class_and_info(address, name)
+
+        device.add_services(services)
 
         self.exporter.add_bluetooth_devices(device)
 
-    def get_device_class_and_info(self, address):
+    def get_device_class_and_info(self, address, name): # TODO rename
         try:
             result = subprocess.run(['hcitool', 'info', address], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             output = result.stdout.decode()
@@ -96,8 +84,7 @@ class BluetoothScanner:
                 else:
                     extra_info = f"{extra_info}\n{line}"
 
-
-            return device_class, manufacturer, version, hci_version, lmp_version, device_type, device_id, extra_info
+            return bt_device([None, address, name, device_class, manufacturer, version, hci_version, lmp_version, device_type, device_id, extra_info])
 
         except Exception as e:
             log.debug(f"Error fetching Bluetooth device info via HCI for {address}: {e}")
@@ -107,6 +94,7 @@ class BluetoothScanner:
         while self.scanning:
             log.debug("Scanning for Bluetooth devices...")
 
+            devices = None
             try:
                 devices = bluetooth.discover_devices(duration=6, lookup_names=True, flush_cache=True)
             except (bluetooth.BluetoothError, OSError) as e:
@@ -117,11 +105,8 @@ class BluetoothScanner:
             if devices:
                 log.debug(f"Found {len(devices)} Bluetooth device(s):")
                 for addr, name in devices:
-                    device = BluetoothDevice(address=addr, name=name)
-                    self.devices.append(device)
                     log.info(f"Bluetooth Device Address: {addr} | Device Name: {name}")
-
-                    self.executor.submit(self.get_device_info, device)
+                    self.executor.submit(self.get_device_info, addr, name)
             else:
                 log.debug("No Bluetooth devices found.")
 

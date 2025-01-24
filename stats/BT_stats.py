@@ -3,7 +3,7 @@ import pandas as pd
 from collections import Counter
 from tabulate import tabulate
 
-from BT_device import BT_device
+from lib.bt_device import bt_device
 from db import DB
 
 class BT_stats:
@@ -59,7 +59,7 @@ Requesting information ...""",
 
     def __get_id(self, device_id):
 
-        dev = BT_device(
+        dev = bt_device(
                 self.db.execute(f"SELECT * FROM {self.TBL_DEV} WHERE id = '{device_id}'")[0]
                 )
 
@@ -79,11 +79,11 @@ Requesting information ...""",
                                 INNER JOIN {self.TBL_DEV_SVC} ds ON t.id = ds.time_id
                                 WHERE ds.service_id = {svc[0]}
                                 """))
-        dev.add_services(services, svc_timings)
+        dev.add_services_timings(services, svc_timings)
 
         return dev
 
-    def get_devices_by_attribute(self, attribute, val = None, dev_origin: BT_device = None):
+    def get_devices_by_attribute(self, attribute, val = None, dev_origin: bt_device = None):
         if val:
             origin_id = -1 # ignore
             devices = []
@@ -110,7 +110,7 @@ Requesting information ...""",
         # TODO compare all services with all from original_devices
 
 
-    def __devices_comparison(self, devices: [BT_device], original_devices: [BT_device] = []):
+    def __devices_comparison(self, devices: [bt_device], original_devices: [bt_device] = []):
         interest_score = 0
         ret_str = ""
 

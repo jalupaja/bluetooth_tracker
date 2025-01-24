@@ -8,10 +8,10 @@ pkgs.mkShell {
 
     python312Packages.rich
     python312Packages.matplotlib
-    pkgs.python312Packages.numpy
 
-    # pkgs.python312Packages.pandas
-    # pkgs.python312Packages.tabulate
+    pkgs.python312Packages.numpy
+    pkgs.python312Packages.pandas
+    pkgs.python312Packages.tabulate
   ];
 
   shellHook = "source .venv/bin/activate";

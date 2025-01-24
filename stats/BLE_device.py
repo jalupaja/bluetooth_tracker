@@ -44,9 +44,7 @@ class BLE_device:
                     return "IPad"
 
             elif self.manufacturers == "Microsoft":
-                if manu_info_back == "01":
-                    return "XBox"
-                elif manu_info_back == "09":
+                if manu_info_back == "09":
                     return "Windows Desktop"
                 elif manu_info_back in ["0a"]:
                     return "Windows Phone"

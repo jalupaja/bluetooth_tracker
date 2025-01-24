@@ -1,20 +1,20 @@
 from difflib import SequenceMatcher
 
 DEBUG = False
-class Similarity:
+class similarity:
 
     @staticmethod
     def calculate_similarity(value1, value2, checker_function = None):
         # a checker_function should take 2 values, compare them and return a floating point similarity value
         if checker_function is None:
             if isinstance(value1, str) and isinstance(value2, str):
-                return Similarity.text(value1, value2)
+                return similarity.text(value1, value2)
             elif isinstance(value1, (list, set, tuple)) and isinstance(value2, (list, set, tuple)):
-                return Similarity.list(value1, value2)
+                return similarity.list(value1, value2)
             elif isinstance(value1, (bytes, bytearray)) and isinstance(value2, (bytes, bytearray)):
-                return Similarity.binary(value1, value2)
+                return similarity.binary(value1, value2)
             elif isinstance(value1, (int, float)) and isinstance(value2, (int, float)):
-                return Similarity.numeric(value1, value2)
+                return similarity.numeric(value1, value2)
             else:
                 if DEBUG:
                     print(f"ERROR calculating similarity between {value1} and {value2}")

@@ -2,5 +2,7 @@ bleak
 pyyaml
 pybluez
 numpy
+pandas
 rich
 matplotlib
+tabulate

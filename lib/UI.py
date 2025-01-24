@@ -7,8 +7,8 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import time
 
-from ble_device import BleDevice
-import log
+from lib.ble_device import ble_device
+from lib.log import log
 
 
 class TUITable:
@@ -28,15 +28,15 @@ class TUITable:
         table.add_column("Last Seen (s)", justify="right", style="green")
         return table
 
-    def update(self, ble_device: BleDevice):
+    def update(self, device: ble_device):
         new_data = {
-            'name': ble_device.name,
-            'manufacturer': ble_device.manufacturers,
-            'device_type': ble_device.device_type,
-            'address': ble_device.address,
-            'rssi': ble_device.rssi,
+            'name': device.name,
+            'manufacturer': device.manufacturers,
+            'device_type': device.device_type,
+            'address': device.address,
+            'rssi': device.rssi,
             'last_update': datetime.now(),
-            'uuids': ble_device.uuids,
+            'uuids': device.uuids,
         }
 
         if new_data.get('address') in self.devices:

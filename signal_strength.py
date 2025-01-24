@@ -6,9 +6,9 @@ from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
-import log
-import ble_device
-from TUI import TUITable, GUIGraph
+from lib.log import log
+from lib.ble_device import ble_device
+from lib.UI import TUITable, GUIGraph
 
 # TODO maybe rewrite original?
 class BleScanner:
@@ -81,8 +81,8 @@ def addr_callback(device: BLEDevice, advertisement_data: AdvertisementData):
     print("")
 
 def tui_callback(device: BLEDevice, advertisement_data: AdvertisementData):
-    devs.append(ble_device.BleDevice(device))
-    table.update(ble_device.BleDevice(device))
+    devs.append(ble_device(device))
+    table.update(ble_device(device))
 
 devs = []
 

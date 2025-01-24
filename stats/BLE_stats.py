@@ -5,9 +5,9 @@ from difflib import SequenceMatcher
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
-from stats.BLE_device import BLE_device
-from stats.db import DB
-from stats.Similarity import Similarity
+from lib.ble_device import ble_device
+from lib.db import DB
+from lib.similarity import similarity
 
 class BLE_stats:
     TBL_TIME = "time"
@@ -37,23 +37,23 @@ Requesting information ...""",
         # TODO better weighting (using ML)
         # -> save to list, list into ML-Model?
         self.attributes = [
-            ("name", 0.2, Similarity.text),
-            ("name2", 0.2, Similarity.text),
-            ("address", 10, Similarity.exact),
-            ("address2", 10, Similarity.exact),
-            ("addresstype", 0.0, Similarity.exact),
-            ("alias", 0.7, Similarity.text),
-            ("appearance", 0.3, Similarity.numeric),
-            ("legacypairing", 0.5, Similarity.numeric),
-            ("uuids", 1.0, None), # TODO
-            ("manufacturers", 0.7, None), # TODO
+            ("name", 0.2, similarity.text),
+            ("name2", 0.2, similarity.text),
+            ("address", 10, similarity.exact),
+            ("address2", 10, similarity.exact),
+            ("addresstype", 0.0, similarity.exact),
+            ("alias", 0.7, similarity.text),
+            ("appearance", 0.3, similarity.numeric),
+            ("legacypairing", 0.5, similarity.numeric),
+            ("uuids", 1.0, None), # TODO should be compared by string part in ...
+            ("manufacturers", 0.7, similarity.text),
             ("manufacturer_binary", 0.9, None), # TODO has to be actual bytes!!!
             ("servicedata", 0.6, None), # TODO should be binary. current is str(binary...)
             ("advertisingflags", 0.4, None), # TODO
             ("servicesresolved", 0.2, None), # TODO
-            ("class_name", 0.3, Similarity.text),
-            ("modalias", 0.6, Similarity.text),
-            ("icon", 0.7, Similarity.text),
+            ("class_of_device", 0.3, similarity.text),
+            ("modalias", 0.6, similarity.text),
+            ("icon", 0.7, similarity.text),
             ]
 
     def get_all_devices(self):
@@ -84,13 +84,12 @@ Requesting information ...""",
         return pd.Series(self.db.execute(f"SELECT id, name, address FROM {self.TBL_DEV} WHERE name LIKE '%{search}%'")).unique()
 
     def get_device(self, device_id):
-
         res = self.db.execute(f"SELECT * FROM {self.TBL_DEV} WHERE id = '{device_id}'")
 
         if len(res) <= 0:
             return None
 
-        dev = BLE_device(res[0])
+        dev = ble_device(res[0])
 
         dev.add_timings(self.db.execute(f"""SELECT t.timestamp, t.geolocation FROM {self.TBL_TIME} t
                             INNER JOIN {self.TBL_DEV_TIME} dt ON t.id = dt.time_id
@@ -99,7 +98,7 @@ Requesting information ...""",
 
         return dev
 
-    def get_devices_by_attribute(self, attribute, val = None, dev_origin: BLE_device = None):
+    def get_devices_by_attribute(self, attribute, val = None, dev_origin: ble_device = None):
         if val:
             origin_id = -1 # ignore
             devices = []
@@ -126,7 +125,7 @@ Requesting information ...""",
 
         for attr, weight, checker_fun in self.attributes:
             if attr in original_attributes and getattr(random_device, attr, None) is not None:
-                similarity_score += weight * Similarity.calculate_similarity(original_attributes[attr], random_device[attr], checker_fun)
+                similarity_score += weight * similarity.calculate_similarity(original_attributes[attr], random_device[attr], checker_fun)
                 total_weight += weight
 
         return similarity_score / total_weight if total_weight > 0 else 0
@@ -148,20 +147,20 @@ Requesting information ...""",
 
             likely_matches_chunk = []
             for device_data in random_devices_data:
-                random_device = BLE_device(device_data)
+                random_device = ble_device(device_data)
 
                 similarity_sum = 0
                 for original_attributes in original_unique_attributes:
 
-                    similarity = self.calculate_similarity_from_attributes(
+                    sim = self.calculate_similarity_from_attributes(
                         original_attributes, random_device
                     )
-                    similarity_sum += similarity
+                    similarity_sum += sim
 
                 similarity_sum = similarity_sum / len(original_devices)
                 if similarity_sum >= similarity_threshold:
                     likely_matches_chunk.append((random_device.id, similarity_sum))
-                    # print(f"Likely match found: Device ID = {random_device.id}, Similarity = {similarity_sum:.2f}")
+                    # print(f"Likely match found: Device ID = {random_device.id}, similarity = {similarity_sum:.2f}")
 
             return likely_matches_chunk
 
@@ -221,15 +220,15 @@ Requesting information ...""",
 
             likely_matches_chunk = []
             for device_data in random_devices_data:
-                random_device = BLE_device(device_data)
+                random_device = ble_device(device_data)
 
                 similarity_sum = 0
                 for original_attributes in original_unique_attributes:
 
-                    similarity = self.calculate_similarity_from_attributes(
+                    sim = self.calculate_similarity_from_attributes(
                         original_attributes, random_device
                     )
-                    similarity_sum += similarity
+                    similarity_sum += sim
 
                 similarity_sum = similarity_sum / len(original_devices)
                 if similarity_sum >= similarity_threshold:
@@ -336,9 +335,9 @@ Requesting information ...""",
                 print(f"\t{color}{value} \033[0m({device_ids_str})")
             print()
 
-    def __get_color(self, similarity):
-        red = int((1 - similarity) * 255)
-        green = int(similarity * 255)
+    def __get_color(self, sim):
+        red = int((1 - sim) * 255)
+        green = int(sim * 255)
         return f"\033[38;2;{red};{green};0m"
 
     def compare_devices(self, device_id1, device_id2):
@@ -353,8 +352,8 @@ Requesting information ...""",
         for attr, weight, checker_fun in self.attributes:
             value1 = d1[attr]
             value2 = d2[attr]
-            similarity = Similarity.calculate_similarity(value1, value2, checker_fun)
-            color = self.__get_color(similarity)
+            sim = similarity.calculate_similarity(value1, value2, checker_fun)
+            color = self.__get_color(sim)
             print(f"{color}{attr.upper()}> {value1} - {value2}\n\033[0m")
 
     def compare_devices_groups(self, device_id1, device_id2):
@@ -391,9 +390,9 @@ Requesting information ...""",
 
             for value1 in values_group1:
                 for value2 in values_group2:
-                    similarity = Similarity.calculate_similarity(value1, value2, checker_fun)
-                    color = self.__get_color(similarity)
-                    print(f"{color}{attr.upper()}> {value1} - {value2} | Similarity: {similarity:.2f}\n\033[0m")
+                    sim = similarity.calculate_similarity(value1, value2, checker_fun)
+                    color = self.__get_color(sim)
+                    print(f"{color}{attr.upper()}> {value1} - {value2} | Similarity: {sim:.2f}\n\033[0m")
 
         self.print_timings(devices_group1 + devices_group2)
         # self.print_all_timings(devices_group1 + devices_group2)
