@@ -53,21 +53,18 @@ class ble_scanner:
                     gatt_services = []
                     for service in client.services:
                         characteristics = []
-                        values = []
                         for char in service.characteristics:
-                            characteristics.append(GattCharacteristic(char))
+                            saved_char = GattCharacteristic(char)
+                            characteristics.append(saved_char)
+
                             try:
                                 if 'read' in char.properties:
-                                    value = await client.read_gatt_char(char.uuid)
-                                    values.append(value)
-                                else:
-                                    values.append(None)
-                            except Exception:
+                                    saved_char.value = await client.read_gatt_char(char.uuid)
+                            except Exception as e:
                                 if not client.is_connected:
                                     client.connect()
-                                values.append(None)
 
-                        gatt_services.append(GattService(service, characteristics, values))
+                        gatt_services.append(GattService(service, characteristics))
                     log.debug(f"Successfully connected to {address}")
                     return gatt_services
             except Exception as e:
@@ -115,17 +112,16 @@ class ble_scanner:
         loop.stop()
 
 class GattService:
-    def __init__(self, service, characteristics, values):
+    def __init__(self, service, characteristics):
         self.description = service.description
         self.handle = service.handle
         self.uuid = service.uuid
         self.characteristics = characteristics
-        self.values = values
 
     def __str__(self):
         ret = f"{self.uuid}: {self.description} ({self.handle}):\n"
-        for char, value in zip(self.characteristics, self.values):
-            ret += f"\t{char}: {value}\n"
+        for char in self.characteristics:
+            ret += f"\t{char}\n"
         return ret
 
 class GattCharacteristic:
@@ -134,7 +130,8 @@ class GattCharacteristic:
         self.handle = char.handle
         self.properties = char.properties
         self.uuid = char.uuid
+        self.value = None
 
     def __str__(self):
-        return f"{self.uuid}: {self.description} ({self.handle}): {', '.join(self.properties)}"
+        return f"{self.uuid}: {self.description} ({self.handle}): {', '.join(self.properties)} = {self.value}"
 
