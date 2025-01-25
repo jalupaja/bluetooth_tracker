@@ -37,7 +37,7 @@ Requesting information ...""",
         return pd.Series(self.db.execute(f"SELECT id, name, address FROM {self.TBL_DEV} WHERE name LIKE '%{search}%'")).unique()
 
     def parse_id(self, device_id):
-        self.dev_origin = self.__get_id(device_id)
+        self.dev_origin = self.get_device(device_id)
         interest_score = 0
         summary = ""
 
@@ -57,7 +57,7 @@ Requesting information ...""",
         self.interest_score = interest_score
         self.summary = summary
 
-    def __get_id(self, device_id):
+    def get_device(self, device_id):
 
         dev = bt_device(
                 self.db.execute(f"SELECT * FROM {self.TBL_DEV} WHERE id = '{device_id}'")[0]
@@ -100,7 +100,7 @@ Requesting information ...""",
         dev_ids = [i[0] for i in dev_ids]
 
         for dev_id in dev_ids:
-            devices.append(self.__get_id(dev_id))
+            devices.append(self.get_device(dev_id))
 
         return devices
 
@@ -170,6 +170,11 @@ Requesting information ...""",
 def arr_sel(arr: np.ndarray, names: list, sel_names: list):
     indexes = [names.index(s) for s in sel_names]
     return arr[indexes]
+
+def pr(device):
+    [print(s) for s in device.services]
+    print(device)
+    print(device.get_timings_minmax())
 
 DB_PATH = "db/2024.db"
 db = DB(DB_PATH)
