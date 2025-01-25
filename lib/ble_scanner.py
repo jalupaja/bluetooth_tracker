@@ -9,10 +9,12 @@ from lib.log import log
 from concurrent.futures import ThreadPoolExecutor
 
 class ble_scanner:
+    MAX_CONNECTION_TRIES = 3
     callback = None
     uuids = None
-    queued_gatts = set()
     gatt_executor = ThreadPoolExecutor(10)
+    finished_gatts = set()
+    gatt_tries = {}
 
     def __init__(self, callback):
         self.callback = callback
@@ -35,10 +37,10 @@ class ble_scanner:
             await scanner.stop()
 
     def scanner_callback(self, device, advertisement_data):
-        if device.address in self.queued_gatts:
+        if device.address in self.finished_gatts:
             self.callback(device, None)
         else:
-            self.queued_gatts.add(device.address)
+            self.finished_gatts.add(device.address)
             self.gatt_executor.submit(self.connect_gatt, device)
 
     def connect_gatt(self, device):
@@ -70,6 +72,13 @@ class ble_scanner:
                     return gatt_services
             except Exception as e:
                 log.debug(f"Error connecting to {address}: {e}")
+                # allow more tries because it failed unexpectedly
+                if not address in self.gatt_tries:
+                    self.gatt_tries[address] = 0
+                self.gatt_tries[address] += 1
+
+                if self.gatt_tries[address] <= self.MAX_CONNECTION_TRIES:
+                    self.finished_gatts.remove(address) # retry
                 return None
 
         loop = asyncio.new_event_loop()
