@@ -11,7 +11,7 @@ Type=simple
 User=$(whoami)
 WorkingDirectory=$(pwd)
 Environment=\"PATH=$(pwd)/.venv/bin\"
-ExecStart=python $(pwd)/main.py
+ExecStart=python -m scanner
 Restart=always
 
 [Install]
