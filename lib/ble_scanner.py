@@ -39,10 +39,10 @@ class ble_scanner:
             self.callback(device, None)
         else:
             self.queued_gatts.add(device.address)
-            self.gatt_executor.submit(self.connect_gatt, device.address)
+            self.gatt_executor.submit(self.connect_gatt, device)
 
-    def connect_gatt(self, address):
-        async def run():
+    def connect_gatt(self, device):
+        async def run(address):
             log.info(f"Connecting to {address}")
             try:
                 async with BleakClient(address) as client:
@@ -73,7 +73,8 @@ class ble_scanner:
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        return loop.run_until_complete(run())
+        services = loop.run_until_complete(run(device.address))
+        self.callback(device, services)
 
     def scan(self):
         def run_loop():
