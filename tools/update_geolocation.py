@@ -12,18 +12,16 @@ def update_geolocation(db, date, start_time, end_time, new_geolocation):
         print("Invalid date or time format. Use 'YYYY-MM-DD' for date and 'HH:MM' for time.")
         return
 
-    db.cur.execute("""
+    db.execute("""
         UPDATE time
         SET geolocation = ?
         WHERE timestamp >= ? AND timestamp <= ?;
     """, (new_geolocation, start_time, end_time))
-    db.commit()
 
-    db.cur.execute("""
+    rows = db.execute("""
         SELECT * FROM time
         WHERE timestamp >= ? AND timestamp <= ?;
     """, (start_time, end_time))
-    rows = db.cur.fetchall()
     print(f"{len(rows)} rows affected")
 
 db = DB("../db/db.db")
