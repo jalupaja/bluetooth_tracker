@@ -13,7 +13,6 @@ class DB:
     def __init__(self, path):
         self.path = path
         self.con = sqlite3.connect(path, check_same_thread=False)
-        self.cur = None
 
     def __del__(self):
         if self.con:
@@ -29,35 +28,36 @@ class DB:
         columns_info = self.execute(f"PRAGMA table_info({table})")
         return [col[1] for col in columns_info]
 
-    def _update_cursor(self):
-        if self.cur:
-            self.cur.close()
-        self.cur = self.con.cursor()
-
     def execute(self, query, *args):
-        self._update_cursor()
+        cur = self.con.cursor()
         if len(args) > 0:
-            self.cur.execute(query, *args)
+            cur.execute(query, *args)
         else:
-            self.cur.execute(query)
-        return self.cur.fetchall()
+            cur.execute(query)
+        res = cur.fetchall()
+        cur.close()
+        return res
 
     def execute_rowid(self, query, *args):
-        self._update_cursor()
+        cur = self.con.cursor()
         if len(args) > 0:
-            self.cur.execute(query, *args)
+            cur.execute(query, *args)
         else:
-            self.cur.execute(query)
+            cur.execute(query)
         self.commit()
-        return self.cur.lastrowid
+        res = cur.lastrowid
+        cur.close()
+        return res
 
     def execute_single(self, query, *args):
-        self._update_cursor()
+        cur = self.con.cursor()
         if len(args) > 0:
-            self.cur.execute(query, *args)
+            cur.execute(query, *args)
         else:
-            self.cur.execute(query)
-        return self.cur.fetchone()
+            cur.execute(query)
+        res = cur.fetchone()
+        cur.close()
+        return res
 
     def commit(self):
         self.con.commit()
