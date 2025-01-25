@@ -53,15 +53,16 @@ class ble_scanner:
                         characteristics = []
                         values = []
                         for char in service.characteristics:
-                            properties = char.properties.decode()
                             characteristics.append(GattCharacteristic(char))
                             try:
-                                if 'read' in properties:
+                                if 'read' in char.properties:
                                     value = await client.read_gatt_char(char.uuid)
                                     values.append(value)
                                 else:
                                     values.append(None)
                             except Exception:
+                                if not client.is_connected:
+                                    client.connect()
                                 values.append(None)
 
                         gatt_services.append(GattService(service, characteristics, values))
