@@ -1,21 +1,22 @@
-from bleak import BleakScanner, BleakError, BleakClient
+from bleak import BleakScanner, BleakClient
 import threading
 import time
 import asyncio
-from queue import Queue
 
 from lib.ble_device import ble_device
 from lib.log import log
+
+from concurrent.futures import ThreadPoolExecutor
 
 class ble_scanner:
     callback = None
     uuids = None
     queued_gatts = set()
+    gatt_executor = ThreadPoolExecutor(10)
 
     def __init__(self, callback):
         self.callback = callback
         self.loop = None
-        self.gatt_queue = Queue()
 
     async def _scan(self):
         if self.uuids:
@@ -38,59 +39,43 @@ class ble_scanner:
             self.callback(device, None)
         else:
             self.queued_gatts.add(device.address)
-            self.gatt_queue.put(device)
+            self.gatt_executor.submit(self.connect_gatt, device.address)
 
-    async def _scan_gatt(self):
-        try:
-            while True:
-                device = await asyncio.to_thread(self.gatt_queue.get)
-                gatt_services = await self.connect_gatt(device.address)
-                self.callback(device, gatt_services)
-        except asyncio.CancelledError:
-            pass
-        except Exception as e:
-            log.error("Failed getting BLE infos")
-
-    async def connect_gatt(self, address):
-        try:
-            async with BleakClient(address) as client:
-                if not client.is_connected:
-                    return None
-
-                gatt_services = []
-                for service in client.services:
-                    characteristics = []
-                    values = []
-                    for char in service.characteristics:
-                        properties = char.properties.decode()
-                        characteristics.append(GattCharacteristic(char.uuid, properties))
-                        try:
-                            if 'read' in properties:
-                                value = await client.read_gatt_char(char.uuid)
-                                values.append(value)
-                            else:
+    def connect_gatt(self, address):
+        async def run():
+            log.info(f"Connecting to {address}")
+            try:
+                async with BleakClient(address) as client:
+                    if not client.is_connected:
+                        return None
+                    gatt_services = []
+                    for service in client.services:
+                        characteristics = []
+                        values = []
+                        for char in service.characteristics:
+                            properties = char.properties.decode()
+                            characteristics.append(GattCharacteristic(char.uuid, properties))
+                            try:
+                                if 'read' in properties:
+                                    value = await client.read_gatt_char(char.uuid)
+                                    values.append(value)
+                                else:
+                                    values.append(None)
+                            except Exception:
                                 values.append(None)
-                        except Exception:
-                            values.append(None)
 
-                    gatt_services.append(GattService(service.uuid, characteristics, values))
+                        gatt_services.append(GattService(service.uuid, characteristics, values))
+                    log.debug(f"Successfully connected to {address}")
+                    return gatt_services
+            except Exception as e:
+                log.debug(f"Error connecting to {address}: {e}")
+                return None
 
-                return gatt_services
-        except Exception as e:
-            return None
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop.run_until_complete(run())
 
     def scan(self):
-        def run_gatt_loop():
-            self.gatt_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(self.gatt_loop)
-
-            try:
-                self.gatt_loop.run_until_complete(self._scan_gatt())
-            except Exception as e:
-                log.error(f"Error in gatt loop: {e}")
-            finally:
-                self.gatt_loop.close()
-
         def run_loop():
             self.loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self.loop)
@@ -102,22 +87,19 @@ class ble_scanner:
             finally:
                 self.loop.close()
 
-        t1 = threading.Thread(target=run_loop, daemon=True)
-        t2 = threading.Thread(target=run_gatt_loop, daemon=True)
-        t1.start()
-        t2.start()
+        t = threading.Thread(target=run_loop, daemon=True)
+        t.start()
 
     def stop(self):
         if self.loop:
             asyncio.run_coroutine_threadsafe(self._shutdown_loop(self.loop), self.loop)
-        if self.gatt_loop:
-            asyncio.run_coroutine_threadsafe(self._shutdown_loop(self.gatt_loop), self.gatt_loop)
 
     async def _shutdown_loop(self, loop):
         for task in asyncio.all_tasks(loop):
             if not task.done():
                 task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
+        self.gatt_executor.shutdown(wait=True)
 
         loop.stop()
 
