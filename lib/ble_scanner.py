@@ -54,7 +54,7 @@ class ble_scanner:
                         values = []
                         for char in service.characteristics:
                             properties = char.properties.decode()
-                            characteristics.append(GattCharacteristic(char.uuid, properties))
+                            characteristics.append(GattCharacteristic(char))
                             try:
                                 if 'read' in properties:
                                     value = await client.read_gatt_char(char.uuid)
@@ -64,7 +64,7 @@ class ble_scanner:
                             except Exception:
                                 values.append(None)
 
-                        gatt_services.append(GattService(service.uuid, characteristics, values))
+                        gatt_services.append(GattService(service, characteristics, values))
                     log.debug(f"Successfully connected to {address}")
                     return gatt_services
             except Exception as e:
@@ -105,22 +105,26 @@ class ble_scanner:
         loop.stop()
 
 class GattService:
-    def __init__(self, uuid, characteristics, values):
-        self.uuid = uuid
+    def __init__(self, service, characteristics, values):
+        self.description = service.description
+        self.handle = service.handle
+        self.uuid = service.uuid
         self.characteristics = characteristics
         self.values = values
 
     def __str__(self):
-        ret = f"{self.uuid}:\n"
+        ret = f"{self.uuid}: {self.description} ({self.handle}):\n"
         for char, value in zip(self.characteristics, self.values):
-            ret += f"  {char}: {value}\n"
+            ret += f"\t{char}: {value}\n"
         return ret
 
 class GattCharacteristic:
-    def __init__(self, uuid, properties):
-        self.uuid = uuid
-        self.properties = properties
+    def __init__(self, char):
+        self.description = char.description
+        self.handle = char.handle
+        self.properties = char.properties
+        self.uuid = char.uuid
 
     def __str__(self):
-        return f"{self.uuid}: {', '.join(self.properties)}"
+        return f"{self.uuid}: {self.description} ({self.handle}): {', '.join(self.properties)}"
 
