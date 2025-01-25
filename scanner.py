@@ -4,8 +4,11 @@ from lib.ble_scanner import ble_scanner
 from lib.ble_device import ble_device
 from lib.log import log
 
-def ble_callback(device, _):
-    db.insert_ble_device(ble_device(device))
+def ble_callback(device, services):
+    dev = ble_device(device)
+    dev.services = services
+
+    db.insert_ble_device(dev)
 
 if __name__ == "__main__":
     db_path = "db.db"
