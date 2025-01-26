@@ -1,5 +1,5 @@
 import sqlite3
-from lib.db import BluetoothDatabase, DB
+from lib.db import BluetoothDatabase, DB, table_ble_device
 
 DB_PATH = "db/hci.db"
 
@@ -7,7 +7,7 @@ columns = ["name", "name2", "address", "address2", "addresstype", "alias", "appe
 
 table_name = "ble_device"
 
-create_table = BluetoothDatabase().table_ble_device
+create_table = table_ble_device
 
 db = DB(DB_PATH)
 
@@ -23,7 +23,9 @@ insert_query = f"""
 """
 db.execute(insert_query)
 
-db.execute(f"DROP TABLE old_{table_name};")
+print(db.execute(f"SELECT COUNT(*) FROM old{table_name}"))
+print(db.execute(f"SELECT COUNT(*) FROM {table_name}"))
+# db.execute(f"DROP TABLE old_{table_name};")
 
 db.commit()
-db.close()
+# db.close()
