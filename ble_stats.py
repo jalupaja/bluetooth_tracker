@@ -8,11 +8,17 @@ from concurrent.futures import ThreadPoolExecutor
 from lib.ble_device import ble_device
 from lib.db import DB
 from lib.similarity import similarity
+from lib.ble_gatt import GattService, GattCharacteristic, GattDescriptor
 
 class ble_stats:
     TBL_TIME = "time"
     TBL_DEV = "ble_device"
     TBL_DEV_TIME = "ble_device_time"
+    TBL_SVC = "ble_service"
+    TBL_CHAR = "ble_characteristic"
+    TBL_DESC = "ble_descriptor"
+    TBL_DEV_CHAR = "ble_device_char"
+    TBL_DEV_DESC = "ble_char_desc"
 
     interest_score = -1
     summary = None
@@ -25,10 +31,8 @@ Requesting information ...""",
 
     attributes = []
 
-    def __init__(self, db, device_id = None):
+    def __init__(self, db):
         self.db = db
-        if device_id is not None:
-            self.parse_id(device_id)
 
         self.TBL_DEV_names = self.db.get_columns(self.TBL_DEV)
         # self.TBL_SVC_names = self.db.get_columns(self.TBL_SVC)
@@ -84,6 +88,7 @@ Requesting information ...""",
         return pd.Series(self.db.execute(f"SELECT id, name, address FROM {self.TBL_DEV} WHERE name LIKE '%{search}%'")).unique()
 
     def get_device(self, device_id):
+
         res = self.db.execute(f"SELECT * FROM {self.TBL_DEV} WHERE id = '{device_id}'")
 
         if len(res) <= 0:
@@ -95,6 +100,45 @@ Requesting information ...""",
                             INNER JOIN {self.TBL_DEV_TIME} dt ON t.id = dt.time_id
                             WHERE dt.device_id = {device_id}
                             """))
+
+        # get services, characteristics, descriptors
+        char_info = []
+        try:
+            char_info = self.db.execute(f"""SELECT service_id, char_id
+                                         FROM {self.TBL_DEV_CHAR}
+                                         WHERE device_id = {device_id}
+                                         """)
+                            # TODO? WHERE device_address = {dev.address}
+        except:
+            pass
+
+        services = {}
+        for info in char_info:
+            svc_id = info[0]
+            char_id = info[1]
+
+            if not svc_id in services:
+                services[svc_id] = GattService(self.db.execute_single(f"SELECT * FROM {self.TBL_SVC} WHERE id = {svc_id}"))
+
+            char = GattCharacteristic(self.db.execute_single(f"SELECT * FROM {self.TBL_CHAR} WHERE id = {char_id}"))
+
+
+            desc_info = self.db.execute(f"""SELECT desc_id
+                                         FROM {self.TBL_DEV_DESC}
+                                         WHERE char_id = {char_id}
+                                         """)
+                                         # TODO? WHERE device_address = {dev.address}
+
+            if len(desc_info) > 0:
+                desc_ids = [str(d[0]) for d in desc_info]
+                desc_data = self.db.execute(f"""SELECT * FROM {self.TBL_DESC}
+                                             WHERE id in ({', '.join(desc_ids)})""")
+
+                char.descriptors = [GattDescriptor(desc) for desc in desc_data]
+
+            services[svc_id].characteristics.append(char)
+
+        dev.services = services
 
         return dev
 

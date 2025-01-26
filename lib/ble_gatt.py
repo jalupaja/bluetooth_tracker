@@ -10,7 +10,7 @@ class ble_gatt:
     gatt_tries = {}
 
     def __init__(self, callback):
-        self.gatt_executor = ThreadPoolExecutor(1)
+        self.gatt_executor = ThreadPoolExecutor(20)
         self.callback = callback
 
     def add_possible_device(self, device):
@@ -123,7 +123,7 @@ class ble_gatt:
                     self.gatt_tries[address] = 0
                 self.gatt_tries[address] += 1
 
-                if self.gatt_tries[address] <= self.MAX_CONNECTION_TRIES:
+                if self.gatt_tries[address] < self.MAX_CONNECTION_TRIES:
                     self.finished_gatts.remove(address) # retry
 
             self.callback(device, gatt_services, gatt_characteristics, gatt_descriptors)
@@ -149,10 +149,12 @@ class GattService:
     characteristics = []
 
     def __init__(self, service):
-        if service:
+        if isinstance(service, tuple):
+            (_, self.uuid, self.description, self.handle) = service
+        elif service:
+            self.uuid = service.uuid
             self.description = service.description
             self.handle = service.handle
-            self.uuid = service.uuid
 
     def __str__(self):
         ret = f"{self.uuid}: {self.description} ({self.handle})"
@@ -170,11 +172,13 @@ class GattCharacteristic:
     descriptors = []
 
     def __init__(self, char):
-        if char:
+        if isinstance(char, tuple):
+            (_, self.uuid, self.value, self.description, self.handle, self.properties.split(", ")) = char
+        elif char:
+            self.uuid = char.uuid
             self.description = char.description
             self.handle = char.handle
             self.properties = char.properties
-            self.uuid = char.uuid
             self.service_handle = char.service_handle
 
     def __str__(self):
@@ -191,11 +195,14 @@ class GattDescriptor:
     characteristic_handle = None
     value = None
 
-    def __init__(self, char):
-        self.description = char.description
-        self.handle = char.handle
-        self.uuid = char.uuid
-        self.characteristic_handle = char.characteristic_handle
+    def __init__(self, desc):
+        if isinstance(desc, tuple):
+            (_, self.uuid, self.value, self.description, self.handle) = desc
+        elif desc:
+            self.description = desc.description
+            self.handle = desc.handle
+            self.uuid = desc.uuid
+            self.desc = desc.characteristic_handle
 
     def __str__(self):
         return f"{self.uuid}: {self.description} ({self.handle}) = {self.value}"
