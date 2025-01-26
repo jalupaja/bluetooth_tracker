@@ -101,3 +101,71 @@ class similarity:
             print(f"num: {num1} : {num2} -> {1 - abs(num1 - num2) / max(abs(num1), abs(num2))}")
         return 1 - abs(num1 - num2) / max(abs(num1), abs(num2))
 
+    @staticmethod
+    def gatt_services(services1, services2):
+        def calc_res(res, total_amount):
+            if not res or total_amount == 0:
+                return 0
+
+            res = [r for r in res if r >= 0]
+            good_matches = len([r for r in res if r > 0.8])
+            partial_matches = sum(res)
+
+            weight = 2
+            weighted_score = (good_matches * weight) + partial_matches
+
+            return min(weighted_score / total_amount, 1.0)
+
+        def cmp_gatt(v1, v2):
+            if v1.uuid == v2.uuid:
+                if v1.description == v2.description:
+                    if v1.value and v1.value == v2.value:
+                        return 1
+                    return 0.9
+                return 0.5
+
+        def cmp_char(char1, char2):
+            val_res = cmp_gatt(char1, char2)
+            res = []
+
+            if val_res > 0.8:
+                desc_map = {desc.handle: desc for desc in char2.descriptors}
+                desc_res = []
+                for desc1 in char1.descriptors:
+                    desc2 = desc_map.get(desc1.handle)
+                    if desc2:
+                        desc_res.append(cmp_gatt(desc1, desc2))
+
+                return calc_res(
+                        desc_res,
+                        max(len(char1.descriptors), len(char2.descriptors))
+                        )
+            else:
+                return val_res
+
+        res = []
+        equal_svc = [s for s in services1 if s in services2]
+        for handle in services1:
+            if handle in services2:
+                svc1 = services1[handle]
+                svc2 = services2[handle]
+
+                if svc1.uuid == svc2.uuid:
+                    if svc1.description == svc2.description:
+                        char_map = {char.handle: char for char in svc2.characteristics}
+                        char_res = []
+                        for char1 in svc1.characteristics:
+                            char2 = char_map.get(char1.handle)
+                            if char2:
+                                char_res.append(cmp_char(char1, char2))
+
+                        res.append(
+                                calc_res(char_res, max(len(svc1.characteristics), len(svc2.characteristics)))
+                                )
+
+                    else:
+                        res.append(0.4)
+
+        sim_val = calc_res(res, max(len(services1), len(services2)))
+        return sim_val
+

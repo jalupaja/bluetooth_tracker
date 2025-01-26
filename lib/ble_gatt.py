@@ -173,7 +173,8 @@ class GattCharacteristic:
 
     def __init__(self, char):
         if isinstance(char, tuple):
-            (_, self.uuid, self.value, self.description, self.handle, self.properties.split(", ")) = char
+            (_, self.uuid, self.value, self.description, self.handle, self.properties) = char
+            self.properties = self.properties.split(", ")
         elif char:
             self.uuid = char.uuid
             self.description = char.description

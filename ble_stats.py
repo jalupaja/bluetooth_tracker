@@ -58,6 +58,7 @@ Requesting information ...""",
             ("class_of_device", 0.3, similarity.text),
             ("modalias", 0.6, similarity.text),
             ("icon", 0.7, similarity.text),
+            ("services", 10, similarity.gatt_services),
             ]
 
     def get_all_devices(self):
@@ -106,9 +107,9 @@ Requesting information ...""",
         try:
             char_info = self.db.execute(f"""SELECT service_id, char_id
                                          FROM {self.TBL_DEV_CHAR}
-                                         WHERE device_id = {device_id}
+                                         WHERE device_address = '{dev.address}'
                                          """)
-                            # TODO? WHERE device_address = {dev.address}
+                                         # WHERE device_id = {device_id}
         except:
             pass
 
@@ -127,7 +128,6 @@ Requesting information ...""",
                                          FROM {self.TBL_DEV_DESC}
                                          WHERE char_id = {char_id}
                                          """)
-                                         # TODO? WHERE device_address = {dev.address}
 
             if len(desc_info) > 0:
                 desc_ids = [str(d[0]) for d in desc_info]
@@ -138,7 +138,11 @@ Requesting information ...""",
 
             services[svc_id].characteristics.append(char)
 
-        dev.services = services
+        parsed_services = {}
+        for svc in services.values():
+            parsed_services[svc.handle] = svc
+
+        dev.services = parsed_services
 
         return dev
 
@@ -398,7 +402,21 @@ Requesting information ...""",
             value2 = d2[attr]
             sim = similarity.calculate_similarity(value1, value2, checker_fun)
             color = self.__get_color(sim)
-            print(f"{color}{attr.upper()}> {value1} - {value2}\n\033[0m")
+
+            print(f"{color}{attr.upper()}", end='')
+            if isinstance(value1, (list, set)):
+                pass # TODO doesn't really work
+                # print(":\n")
+                # for v1, v2 in zip(value1, value2):
+                #     print(f"\t> {v1} - {v2}")
+            elif isinstance(value1, dict):
+                pass # TODO doesn't really work
+                # print(":\n")
+                # for v1, v2 in zip(value1.values(), value2.values()):
+                #     print(f"\t> {v1} - {v2}")
+            else:
+                print(f"> {value1} - {value2}")
+            print("\n\033[0m", end='')
 
     def compare_devices_groups(self, device_id1, device_id2):
         devices_group1 = self.get_devices_by_attribute("address", dev_origin=self.get_device(device_id1))
