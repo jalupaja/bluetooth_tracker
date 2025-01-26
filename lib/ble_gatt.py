@@ -143,12 +143,12 @@ class ble_gatt:
         self.gatt_executor.shutdown(wait=True, cancel_futures=True)
 
 class GattService:
-    description = None
-    handle = None
-    uuid = None
-    characteristics = []
-
     def __init__(self, service):
+        self.description = None
+        self.handle = None
+        self.uuid = None
+        self.characteristics = []
+
         if isinstance(service, tuple):
             (_, self.uuid, self.description, self.handle) = service
         elif service:
@@ -163,15 +163,15 @@ class GattService:
         return ret
 
 class GattCharacteristic:
-    description = None
-    handle = None
-    properties = []
-    uuid = None
-    service_handle = None
-    value = None
-    descriptors = []
-
     def __init__(self, char):
+        self.description = None
+        self.handle = None
+        self.properties = []
+        self.uuid = None
+        self.service_handle = None
+        self.value = None
+        self.descriptors = []
+
         if isinstance(char, tuple):
             (_, self.uuid, self.value, self.description, self.handle, self.properties) = char
             self.properties = self.properties.split(", ")
@@ -190,13 +190,13 @@ class GattCharacteristic:
         return res
 
 class GattDescriptor:
-    description = None
-    handle = None
-    uuid = None
-    characteristic_handle = None
-    value = None
-
     def __init__(self, desc):
+        self.description = None
+        self.handle = None
+        self.uuid = None
+        self.characteristic_handle = None
+        self.value = None
+
         if isinstance(desc, tuple):
             (_, self.uuid, self.value, self.description, self.handle) = desc
         elif desc:
