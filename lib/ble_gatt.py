@@ -27,106 +27,95 @@ class ble_gatt:
             if not client.is_connected:
                 await client.connect()
 
+        def _dec_value(value):
+            # decode a byte value
+            if not value:
+                return None
+            elif value.isalnum():
+                return value.decode('utf-8', errors='replace')
+            else:
+                return value.hex()
+
+        async def _get_char(client, uuid, try_again = True):
+            try:
+                if client.is_connected:
+                    value = await client.read_gatt_char(uuid)
+                    return _dec_value(value)
+            except Exception as e:
+                await _reconnect(client)
+                if try_again: # try again on error
+                    return await _get_char(client, uuid, False)
+            return None
+
+        async def _get_desc(client, handle, try_again = True):
+            try:
+                if client.is_connected:
+                    value = await client.read_gatt_descriptor(handle)
+                    return _dec_value(value)
+            except Exception as e:
+                await _reconnect(client)
+                if try_again: # try again on error
+                    return await _get_desc(client, handle, False)
+            return None
+
         async def run(address):
-            print(address)
             log.info(f"Connecting to {address}")
-            print(f"Connecting to {address}")
+
+            gatt_services = []
+            gatt_characteristics = []
+            gatt_descriptors = []
+
             try:
                 async with BleakClient(address) as client:
                     if not client.is_connected:
                         log.debug(f"Error connecting to {address}: {e}")
-                        print(f"Error connecting to {address}: {e}")
                         return None
-                    gatt_services = []
 
-                    print("SVC")
                     for svc in client.services.services.values():
-                        svc = GattService(svc)
-                        svc_characteristics = []
-                        svc_descriptors = []
-                        for char in svc.characteristics:
-                            svc_characteristics.append(GattCharacteristic(char))
-                        for desc in svc.descriptors:
-                            svc_descriptors.append(GattDescriptor(desc))
+                        gatt_services.append(GattService(svc))
 
-                        svc.characteristics = svc_characteristics
-                        svc.descriptors = svc_descriptors
-                    print()
-                    print()
-                    print()
-                    return None # TODO
-                    for handle, char in client.services.characteristics.items():
-                        print(f"<- {char.service_handle}")
-                        print(f"{char.uuid} ({handle}) {char.description}")
+                    for char in client.services.characteristics.values():
+                        gatt_characteristics.append(GattCharacteristic(char))
 
+                    for desc in client.services.descriptors.values():
+                        gatt_descriptors.append(GattDescriptor(desc))
+
+                    generic_access_characteristics = [
+                        ("00002a00-0000-1000-8000-00805f9b34fb", "Device Name"),
+                        ("00002a01-0000-1000-8000-00805f9b34fb", "Device Appearance"),
+                    ]
+
+                    create_generic_access = False
+                    for uuid, description in generic_access_characteristics:
+                        value = await _get_char(client, uuid)
+                        if value:
+                            create_generic_access = True
+
+                            char = GattCharacteristic(None)
+                            char.description = description
+                            char.uuid = uuid
+                            char.value = value
+                            # char.handle = None # TODO
+                            char.service_handle = 0
+                            gatt_characteristics.append(char)
+
+                    if create_generic_access:
+                        svc = GattService(None)
+                        svc.description = "Generic Access"
+                        svc.handle = 0
+                        svc.uuid = "00001800-0000-1000-8000-00805f9b34fb"
+                        gatt_services.append(svc)
+
+
+                    for char in gatt_characteristics:
                         if 'read' in char.properties:
-                            value = None
-                            try:
-                                if client.is_connected:
-                                    value = await client.read_gatt_char(char.uuid)
-                                    value = value.decode()
-                            except:
-                                await _reconnect(client)
+                            char.value = await _get_char(client, char.uuid)
 
-                            print(f"CHAR VAL: {value}")
-                        for desc in char.descriptors:
-                            print(f"\tdesc: {desc}")
-                            value = None
-                            try:
-                                if client.is_connected:
-                                    value = await client.read_gatt_descriptor(char.uuid)
-                                    print(f"GOT VAL: {value}")
-                                    value = value.decode()
-                            except:
-                                await _reconnect(client)
-                            print(f"\tDESC VAL: {value}")
-                    print()
-                    print()
-                    print()
-                    print("DESC")
-                    for handle, desc in client.services.descriptors.items():
-                        print(f"<- {desc.characteristic_handle}")
-                        print(f"{desc.uuid} ({desc.handle}) {desc.description}")
-                    print()
-                    print()
-                    print()
-                    return None # TODO
+                    for desc in gatt_descriptors:
+                        desc.value = await _get_desc(client, desc.handle)
 
-                    for service in client.services:
-                        print(service)
-                        # TODO need to save name, maybe port
-                        characteristics = []
-                        print(f"CON1?: {client.is_connected}")
-                        # TODO service.descriptors:
-                        for desc in service.descriptors:
-                            print("DESC")
-                        for char in service.characteristics:
-                            print(f"char: {char}")
-                            saved_char = GattCharacteristic(char)
-                            characteristics.append(saved_char)
-
-                            print(f"CON2?: {client.is_connected}")
-                            try:
-                                print(f"CON3?: {client.is_connected}")
-                                if 'read' in char.properties:
-                                    # TODO
-                                    value = await client.read_gatt_char(char.uuid)
-                                    # TODO save
-                            except Exception as e:
-                                print(f"CON4?: {client.is_connected}")
-                                if not client.is_connected:
-                                    await client.connect()
-                                    # TODO throw error if can't connect?
-                                    print(f"recc?: {client.is_connected}")
-                                print(f"Failed val: {e}")
-
-                        gatt_services.append(GattService(service, characteristics))
-                    log.debug(f"Successfully connected to {address}")
-                    print(f"Successfully connected to {address}")
-                    return gatt_services
             except Exception as e:
                 log.debug(f"Error connecting to {address}: {e}")
-                print(f"Error(LATR) connecting to {address}: {e}")
 
                 # TODO maybe not for all errors? maybe it just doesn't have any
                 # allow more tries because it failed unexpectedly
@@ -136,55 +125,78 @@ class ble_gatt:
 
                 if self.gatt_tries[address] <= self.MAX_CONNECTION_TRIES:
                     self.finished_gatts.remove(address) # retry
-                return None
+
+            self.callback(device, gatt_services, gatt_characteristics, gatt_descriptors)
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        services = loop.run_until_complete(run(device.address))
-        print("finished gatt")
-        # TODO self.callback(device, services)
+        try:
+            loop.run_until_complete(run(device.address))
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            log.error(f"Error in scanning loop: {e}")
+        finally:
+            self.loop.close()
 
-    async def _shutdown(self):
-        self.gatt_executor.shutdown(wait=True)
+    def stop(self):
+        self.gatt_executor.shutdown(wait=True, cancel_futures=True)
 
 class GattService:
-    def __init__(self, service):
-        self.description = service.description
-        self.handle = service.handle
-        self.uuid = service.uuid
-        self.characteristics = []
-        self.descriptors = []
+    description = None
+    handle = None
+    uuid = None
+    characteristics = []
 
-    def parse_descriptors(self):
-        # TODO add descriptors to characteristics
-        pass
+    def __init__(self, service):
+        if service:
+            self.description = service.description
+            self.handle = service.handle
+            self.uuid = service.uuid
 
     def __str__(self):
-        ret = f"{self.uuid}: {self.description} ({self.handle}):\n"
+        ret = f"{self.uuid}: {self.description} ({self.handle})"
         for char in self.characteristics:
-            ret += f"\t{char}\n"
+            ret += f"\n\t{char}"
         return ret
 
 class GattCharacteristic:
+    description = None
+    handle = None
+    properties = []
+    uuid = None
+    service_handle = None
+    value = None
+    descriptors = []
+
     def __init__(self, char):
-        self.description = char.description
-        self.handle = char.handle
-        self.properties = char.properties
-        self.uuid = char.uuid
-        self.service_handle = char.service_handle
-        self.value = None
+        if char:
+            self.description = char.description
+            self.handle = char.handle
+            self.properties = char.properties
+            self.uuid = char.uuid
+            self.service_handle = char.service_handle
 
     def __str__(self):
-        return f"{self.uuid}: {self.description} ({self.handle}): {', '.join(self.properties)} = {self.value}"
+        res = f"{self.uuid}: {self.description} ({self.handle}): {', '.join(self.properties)} = {self.value}"
+        for desc in self.descriptors:
+            res += f"\n\t- {desc}"
+
+        return res
 
 class GattDescriptor:
+    description = None
+    handle = None
+    uuid = None
+    characteristic_handle = None
+    value = None
+
     def __init__(self, char):
         self.description = char.description
         self.handle = char.handle
         self.uuid = char.uuid
         self.characteristic_handle = char.characteristic_handle
-        self.value = None
 
     def __str__(self):
-        return f"{self.uuid}: {self.description} ({self.handle}): {', '.join(self.properties)} = {self.value}"
+        return f"{self.uuid}: {self.description} ({self.handle}) = {self.value}"
 

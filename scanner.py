@@ -7,16 +7,12 @@ from lib.log import log
 
 def ble_callback(device, _):
     dev = ble_device(device)
-    # TODO handle in db
     gatt.add_possible_device(dev)
-    # dev.services = services
 
     db.insert_ble_device(dev)
 
-def gatt_callback(device):
-    # TODO
-    # TODO maybe just callback device. __insert_unique__ handles it?
-    pass
+def gatt_callback(device, services, characteristics, descriptors):
+    db.insert_ble_services(device, services, characteristics, descriptors)
 
 if __name__ == "__main__":
     db_path = "db.db"
@@ -37,4 +33,5 @@ if __name__ == "__main__":
         log.debug("\nScanning interrupted by user.")
         ble_scanr.stop()
         bt_scanr.stop()
+        gatt.stop()
 

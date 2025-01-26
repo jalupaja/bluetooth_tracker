@@ -109,12 +109,17 @@ class ble_device:
             self.servicedata = None
 
         self.timings = []
-        self.services: [BT_service] = []
+        self.services = [] # TODO
 
         self.device_type = self.__parse_device_type()
 
     def get_attributes(self):
-        return ["name", "name2", "address", "address2", "addresstype", "alias", "appearance", "legacypairing", "uuids", "manufacturers", "manufacturer_binary", "servicedata", "advertisingflags", "advertisingdata", "servicesresolved", "class_of_device", "modalias", "icon"]
+        return ["name", "name2", "address", "address2", "addresstype", "alias",
+                "appearance", "paired", "bonded", "trusted", "blocked", "legacypairing",
+                "legacypairing", "rssi", "connected", "uuids", "manufacturers",
+                "manufacturer_binary", "servicedata", "advertisingflags",
+                "advertisingdata", "txpower", "servicesresolved", "class_of_device",
+                "modalias", "icon"]
 
     def __parse_device_type(self):
         """

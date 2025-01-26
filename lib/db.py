@@ -65,106 +65,144 @@ class DB:
     def close(self):
         self.__del__()
 
+table_time = """CREATE TABLE IF NOT EXISTS time (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TIMESTAMP,
+            geolocation TEXT
+            );"""
+
+table_bluetooth_device_time = """CREATE TABLE IF NOT EXISTS bluetooth_device_time (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        device_id INTEGER,
+                        time_id INTEGER,
+                        FOREIGN KEY (device_id) REFERENCES bluetooth_device (id),
+                        FOREIGN KEY (time_id) REFERENCES time (id)
+                        );"""
+
+table_ble_device_time = """CREATE TABLE IF NOT EXISTS ble_device_time (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        device_id INTEGER,
+                        time_id INTEGER,
+                        FOREIGN KEY (device_id) REFERENCES ble_device (id),
+                        FOREIGN KEY (time_id) REFERENCES time (id)
+                        );"""
+
+table_bluetooth_device = """CREATE TABLE IF NOT EXISTS bluetooth_device (
+                         id INTEGER PRIMARY KEY AUTOINCREMENT,
+                         address TEXT,
+                         name TEXT,
+                         device_class TEXT,
+                         manufacturer TEXT,
+                         version TEXT,
+                         hci_version TEXT,
+                         lmp_version TEXT,
+                         device_type TEXT,
+                         device_id TEXT,
+                         extra_hci_info TEXT,
+                         services TEXT
+                         );"""
+
+table_ble_device = """CREATE TABLE IF NOT EXISTS ble_device (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT,
+                    name2 TEXT,
+                    address TEXT,
+                    address2 TEXT,
+                    addresstype TEXT,
+                    alias TEXT,
+                    appearance TEXT,
+                    paired BOOLEAN,
+                    bonded BOOLEAN,
+                    trusted BOOLEAN,
+                    blocked BOOLEAN,
+                    legacypairing BOOLEAN,
+                    connected BOOLEAN,
+                    uuids TEXT,
+                    manufacturers TEXT,
+                    manufacturer_binary BLOB,
+                    ServiceData TEXT,
+                    AdvertisingFlags BLOB,
+                    AdvertisingData BLOB,
+                    txpower INTEGER,
+                    servicesresolved BOOLEAN,
+                    class_of_device BLOB,
+                    modalias TEXT,
+                    icon TEXT
+                    ) """
+
+table_ble_services = """CREATE TABLE IF NOT EXISTS ble_service (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        uuid TEXT,
+                        description TEXT,
+                        handle INTEGER
+                        );"""
+
+table_ble_characteristics = """CREATE TABLE IF NOT EXISTS ble_characteristic (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        uuid TEXT,
+                        value TEXT,
+                        description TEXT,
+                        handle INTEGER,
+                        properties TEXT
+                        );"""
+
+table_ble_descriptor = """CREATE TABLE IF NOT EXISTS ble_descriptor (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        uuid TEXT,
+                        value TEXT,
+                        description TEXT,
+                        handle INTEGER,
+                        char_id INTEGER,
+                        FOREIGN KEY (char_id) REFERENCES ble_characteristic (id)
+                        );"""
+
+table_ble_device_char = """CREATE TABLE IF NOT EXISTS ble_device_char (
+                        device_id INTEGER,
+                        device_address TEXT,
+                        service_id INTEGER,
+                        char_id INTEGER,
+                        FOREIGN KEY (device_id) REFERENCES ble_device (id),
+                        FOREIGN KEY (service_id) REFERENCES ble_service (id),
+                        FOREIGN KEY (char_id) REFERENCES ble_characteristic (id),
+                        PRIMARY KEY (device_id, service_id, char_id)
+                        );"""
+
+table_bluetooth_service = """CREATE TABLE IF NOT EXISTS bluetooth_service (
+                          id INTEGER PRIMARY KEY AUTOINCREMENT,
+                          host TEXT,
+                          name TEXT,
+                          service_classes TEXT,
+                          profiles TEXT,
+                          description TEXT,
+                          provider TEXT,
+                          service_id TEXT,
+                          protocol TEXT,
+                          port INTEGER
+                          );"""
+
+table_bluetooth_device_service = """CREATE TABLE IF NOT EXISTS bluetooth_device_service (
+                                 device_id INTEGER,
+                                 service_id INTEGER,
+                                 time_id INTEGER,
+                                 FOREIGN KEY (device_id) REFERENCES bluetooth_device (id),
+                                 FOREIGN KEY (service_id) REFERENCES bluetooth_service (id),
+                                 FOREIGN KEY (time_id) REFERENCES time (id)
+                                 );"""
+
+
 class BluetoothDatabase:
     def __init__(self, file_path="db.db"):
         self.db = DB(file_path)
         self.create_bluetooth_tables()
         self.create_ble_tables()
 
-    table_time = """CREATE TABLE IF NOT EXISTS time (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp TIMESTAMP,
-                geolocation TEXT
-                );"""
-
-    table_bluetooth_device_time = """CREATE TABLE IF NOT EXISTS bluetooth_device_time (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            device_id INTEGER,
-                            time_id INTEGER,
-                            FOREIGN KEY (device_id) REFERENCES bluetooth_device (id),
-                            FOREIGN KEY (time_id) REFERENCES time (id)
-                            );"""
-
-    table_ble_device_time = """CREATE TABLE IF NOT EXISTS ble_device_time (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            device_id INTEGER,
-                            time_id INTEGER,
-                            FOREIGN KEY (device_id) REFERENCES ble_device (id),
-                            FOREIGN KEY (time_id) REFERENCES time (id)
-                            );"""
-
-    table_bluetooth_device = """CREATE TABLE IF NOT EXISTS bluetooth_device (
-                             id INTEGER PRIMARY KEY AUTOINCREMENT,
-                             address TEXT,
-                             name TEXT,
-                             device_class TEXT,
-                             manufacturer TEXT,
-                             version TEXT,
-                             hci_version TEXT,
-                             lmp_version TEXT,
-                             device_type TEXT,
-                             device_id TEXT,
-                             extra_hci_info TEXT,
-                             services TEXT
-                             );"""
-
-    table_ble_device = """CREATE TABLE IF NOT EXISTS ble_device (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        name TEXT,
-                        name2 TEXT,
-                        address TEXT,
-                        address2 TEXT,
-                        addresstype TEXT,
-                        alias TEXT,
-                        appearance TEXT,
-                        paired BOOLEAN,
-                        bonded BOOLEAN,
-                        trusted BOOLEAN,
-                        blocked BOOLEAN,
-                        legacypairing BOOLEAN,
-                        connected BOOLEAN,
-                        uuids TEXT,
-                        manufacturers TEXT,
-                        manufacturer_binary BLOB,
-                        ServiceData TEXT,
-                        AdvertisingFlags BLOB,
-                        AdvertisingData BLOB,
-                        txpower INTEGER,
-                        servicesresolved BOOLEAN,
-                        class_of_device BLOB,
-                        modalias TEXT,
-                        icon TEXT
-                        ) """
-
-    table_bluetooth_service = """CREATE TABLE IF NOT EXISTS bluetooth_service (
-                              id INTEGER PRIMARY KEY AUTOINCREMENT,
-                              host TEXT,
-                              name TEXT,
-                              service_classes TEXT,
-                              profiles TEXT,
-                              description TEXT,
-                              provider TEXT,
-                              service_id TEXT,
-                              protocol TEXT,
-                              port INTEGER
-                              );"""
-
-    table_bluetooth_device_service = """CREATE TABLE IF NOT EXISTS bluetooth_device_service (
-                                     device_id INTEGER,
-                                     service_id INTEGER,
-                                     time_id INTEGER,
-                                     FOREIGN KEY (device_id) REFERENCES bluetooth_device (id),
-                                     FOREIGN KEY (service_id) REFERENCES bluetooth_service (id),
-                                     FOREIGN KEY (time_id) REFERENCES time (id)
-                                     );"""
-
     def create_bluetooth_tables(self):
         try:
-            self.db.execute(self.table_time)
-            self.db.execute(self.table_bluetooth_device_time)
-            self.db.execute(self.table_bluetooth_device)
-            self.db.execute(self.table_bluetooth_service)
-            self.db.execute(self.table_bluetooth_device_service)
+            self.db.execute(table_time)
+            self.db.execute(table_bluetooth_device_time)
+            self.db.execute(table_bluetooth_device)
+            self.db.execute(table_bluetooth_service)
+            self.db.execute(table_bluetooth_device_service)
 
             self.db.commit()
             log.debug("bluetooth tables created successfully.")
@@ -173,9 +211,13 @@ class BluetoothDatabase:
 
     def create_ble_tables(self):
         try:
-            self.db.execute(self.table_time)
-            self.db.execute(self.table_ble_device_time)
-            self.db.execute(self.table_ble_device)
+            self.db.execute(table_time)
+            self.db.execute(table_ble_device_time)
+            self.db.execute(table_ble_device)
+            self.db.execute(table_ble_services)
+            self.db.execute(table_ble_characteristics)
+            self.db.execute(table_ble_descriptor)
+            self.db.execute(table_ble_device_char)
 
             self.db.commit()
             log.debug("ble tables created successfully.")
@@ -252,40 +294,15 @@ class BluetoothDatabase:
         log.debug(f"Device {device.name} ({device.address}) inserted into the database.")
 
     def insert_ble_device(self, device: ble_device):
-        log.info(f"found BLE device: {device.address} {device.name}")
+        # TODO log.info(f"found BLE device: {device.address} {device.name}")
         time_data = {"timestamp": device.timestamp,
                      "geolocation": device.geolocation,
                      }
 
         time_id = self.__insert_unique__("time", time_data)
 
-        device_data = {
-                'name': device.name,
-                'name2': device.name2,
-                'address': device.address,
-                'address2': device.address2,
-                'addresstype': device.addresstype,
-                'alias': device.alias,
-                'appearance': device.appearance,
-                'paired': device.paired,
-                'bonded': device.bonded,
-                'trusted': device.trusted,
-                'blocked': device.blocked,
-                'legacypairing': device.legacypairing,
-                # 'rssi': device.rssi,
-                'connected': device.connected,
-                'uuids': device.uuids,
-                'manufacturers': device.manufacturers,
-                'manufacturer_binary': device.manufacturer_binary,
-                'ServiceData': device.servicedata,
-                'AdvertisingFlags': device.advertisingflags,
-                'AdvertisingData': device.advertisingdata,
-                'txpower': device.txpower,
-                'servicesresolved': device.servicesresolved,
-                'class_of_device': device.class_of_device,
-                'modalias': device.modalias,
-                'icon': device.icon,
-                }
+        device_data = device.to_dict()
+        device_data.pop("rssi")
 
         device_id = self.__insert_unique__("ble_device", device_data)
 
@@ -297,6 +314,51 @@ class BluetoothDatabase:
         self.__insert_unique__("ble_device_time", device_time_data)
 
         log.debug(f"BLE Device {device.name} ({device.address}) inserted into the database.")
+
+    def insert_ble_services(self, device, services, characteristics, descriptors):
+        if services and len(services) > 0:
+            device_data = device.to_dict()
+            device_data.pop("rssi")
+
+            device_id = self.__insert_unique__("ble_device", device_data)
+
+            for svc in services:
+                gatt_service = {
+                    "uuid": svc.uuid,
+                    "description": svc.description,
+                    "handle": svc.handle,
+                    }
+                svc_id = self.__insert_unique__("ble_service", gatt_service)
+                for char in characteristics:
+                    if char.service_handle == svc.handle:
+                        gatt_char = {
+                            "uuid": char.uuid,
+                            "value": char.value,
+                            "description": char.description,
+                            "handle": char.handle,
+                            "properties": ", ".join(char.properties),
+                            }
+                        char_id = self.__insert_unique__("ble_characteristic", gatt_char)
+
+                        device_char = {
+                                "device_id": device_id,
+                                "device_address": device.address,
+                                "service_id": svc_id,
+                                "char_id": char_id,
+                                }
+                        self.__insert_unique__("ble_device_char", device_char)
+
+                        for desc in descriptors:
+                            if desc.characteristic_handle == char.handle:
+                                gatt_desc = {
+                                    "uuid": desc.uuid,
+                                    "value": desc.value,
+                                    "description": desc.description,
+                                    "handle": desc.handle,
+                                    "char_id": char_id,
+                                    }
+
+                                self.__insert_unique__("ble_descriptor", gatt_desc)
 
     def close(self):
         self.db.close()

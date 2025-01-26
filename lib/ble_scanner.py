@@ -37,6 +37,8 @@ class ble_scanner:
 
             try:
                 self.loop.run_until_complete(self._scan())
+            except asyncio.CancelledError:
+                pass
             except Exception as e:
                 log.error(f"Error in scanning loop: {e}")
             finally:
