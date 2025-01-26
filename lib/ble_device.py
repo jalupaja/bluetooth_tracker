@@ -101,6 +101,8 @@ class ble_device:
             self.icon
         ) = struct
 
+        self.rssi = None
+
         # Handle special cases for specific attributes
         if self.manufacturer_binary == "(None,)":
             self.manufacturer_binary = None
@@ -109,7 +111,7 @@ class ble_device:
             self.servicedata = None
 
         self.timings = []
-        self.services = [] # TODO
+        self.services = {}
 
         self.device_type = self.__parse_device_type()
 
@@ -191,13 +193,6 @@ class ble_device:
 
     def add_timings(self, timings):
         self.timings = self.__parse_timings(timings)
-
-    def add_services(self, services, svc_timings):
-        for svc, timing in zip(services, svc_timings):
-            service = BT_service(svc)
-            service.timings = self.__parse_timings(timing)
-
-            self.services.append(service)
 
     def get_timings_minmax(self):
         if len(self.timings) <= 0:

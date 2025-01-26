@@ -130,14 +130,14 @@ table_ble_device = """CREATE TABLE IF NOT EXISTS ble_device (
                     icon TEXT
                     ) """
 
-table_ble_services = """CREATE TABLE IF NOT EXISTS ble_service (
+table_ble_service = """CREATE TABLE IF NOT EXISTS ble_service (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         uuid TEXT,
                         description TEXT,
                         handle INTEGER
                         );"""
 
-table_ble_characteristics = """CREATE TABLE IF NOT EXISTS ble_characteristic (
+table_ble_characteristic = """CREATE TABLE IF NOT EXISTS ble_characteristic (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         uuid TEXT,
                         value TEXT,
@@ -151,9 +151,7 @@ table_ble_descriptor = """CREATE TABLE IF NOT EXISTS ble_descriptor (
                         uuid TEXT,
                         value TEXT,
                         description TEXT,
-                        handle INTEGER,
-                        char_id INTEGER,
-                        FOREIGN KEY (char_id) REFERENCES ble_characteristic (id)
+                        handle INTEGER
                         );"""
 
 table_ble_device_char = """CREATE TABLE IF NOT EXISTS ble_device_char (
@@ -166,6 +164,19 @@ table_ble_device_char = """CREATE TABLE IF NOT EXISTS ble_device_char (
                         FOREIGN KEY (char_id) REFERENCES ble_characteristic (id),
                         PRIMARY KEY (device_id, service_id, char_id)
                         );"""
+
+table_ble_char_desc = """CREATE TABLE IF NOT EXISTS ble_char_desc (
+                      device_id INTEGER,
+                      device_address TEXT,
+                      service_id INTEGER,
+                      char_id INTEGER,
+                      desc_id INTEGER,
+                      FOREIGN KEY (device_id) REFERENCES ble_device (id),
+                      FOREIGN KEY (service_id) REFERENCES ble_service (id),
+                      FOREIGN KEY (char_id) REFERENCES ble_characteristic (id),
+                      FOREIGN KEY (desc_id) REFERENCES ble_descriptor (id),
+                      PRIMARY KEY (device_id, service_id, char_id)
+                      );"""
 
 table_bluetooth_service = """CREATE TABLE IF NOT EXISTS bluetooth_service (
                           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -214,10 +225,11 @@ class BluetoothDatabase:
             self.db.execute(table_time)
             self.db.execute(table_ble_device_time)
             self.db.execute(table_ble_device)
-            self.db.execute(table_ble_services)
-            self.db.execute(table_ble_characteristics)
+            self.db.execute(table_ble_service)
+            self.db.execute(table_ble_characteristic)
             self.db.execute(table_ble_descriptor)
             self.db.execute(table_ble_device_char)
+            self.db.execute(table_ble_char_desc)
 
             self.db.commit()
             log.debug("ble tables created successfully.")
@@ -355,10 +367,20 @@ class BluetoothDatabase:
                                     "value": desc.value,
                                     "description": desc.description,
                                     "handle": desc.handle,
-                                    "char_id": char_id,
                                     }
 
-                                self.__insert_unique__("ble_descriptor", gatt_desc)
+                                desc_id = self.__insert_unique__("ble_descriptor", gatt_desc)
+
+                                device_desc = {
+                                        "device_id": device_id,
+                                        "device_address": device.address,
+                                        "service_id": svc_id,
+                                        "char_id": char_id,
+                                        "desc_id": desc_id,
+                                        }
+
+                                self.__insert_unique__("ble_char_desc", device_desc)
+
 
     def close(self):
         self.db.close()
