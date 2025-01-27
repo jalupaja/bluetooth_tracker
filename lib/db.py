@@ -306,7 +306,7 @@ class BluetoothDatabase:
         log.debug(f"Device {device.name} ({device.address}) inserted into the database.")
 
     def insert_ble_device(self, device: ble_device):
-        # TODO log.info(f"found BLE device: {device.address} {device.name}")
+        log.info(f"found BLE device: {device.address} {device.name}")
         time_data = {"timestamp": device.timestamp,
                      "geolocation": device.geolocation,
                      }

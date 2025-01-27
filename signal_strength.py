@@ -8,57 +8,8 @@ from bleak.backends.scanner import AdvertisementData
 
 from lib.log import log
 from lib.ble_device import ble_device
+from lib.ble_scanner import ble_scanner
 from lib.UI import TUITable, GUIGraph
-
-# TODO maybe rewrite original?
-class BleScanner:
-    callback = None
-    uuids = None
-
-    def __init__(self, callback):
-        self.callback = callback
-        self.loop = None
-
-    async def _scan(self):
-        if self.uuids:
-            scanner = BleakScanner(self.callback, uuids=self.uuids)
-        else:
-            scanner = BleakScanner(self.callback)
-
-        try:
-            while True:
-                await scanner.start()
-                await asyncio.sleep(1)
-                await scanner.stop()
-        except asyncio.CancelledError:
-            pass
-        finally:
-            await scanner.stop()
-
-    def scan(self):
-        def run_loop():
-            self.loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(self.loop)
-            try:
-                self.loop.run_until_complete(self._scan())
-            except Exception as e:
-                log.error(f"Error in scanning loop: {e}")
-            finally:
-                self.loop.close()
-
-        t = threading.Thread(target=run_loop, daemon=True)
-        t.start()
-
-    def stop(self):
-        if self.loop:
-            asyncio.run_coroutine_threadsafe(self._shutdown_loop(), self.loop)
-
-    async def _shutdown_loop(self):
-        for task in asyncio.all_tasks(self.loop):
-            if not task.done():
-                task.cancel()
-        await asyncio.gather(*tasks, return_exceptions=True)
-        self.loop.stop()
 
 def addr_callback(device: BLEDevice, advertisement_data: AdvertisementData):
     if device.address != search_address:
@@ -119,7 +70,7 @@ if __name__ == "__main__":
     search_address = None
     table = TUITable()
 
-    ble_scanner = BleScanner(tui_callback)
+    ble_scanner = ble_scanner(tui_callback)
 
     ble_scanner.scan()
     table.run()
