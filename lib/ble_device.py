@@ -2,10 +2,13 @@ import datetime
 from bleak.backends.device import BLEDevice
 
 from lib.manufacturers import Manufacturer
+from lib.ieee import IEEE
 from lib.device_classes import CoD
 from lib.log import log
 
 class ble_device:
+    manu = Manufacturer()
+    ieee = IEEE()
     def __init__(self, device):
         if isinstance(device, BLEDevice):
             self.__init_new_device(device)
@@ -15,8 +18,6 @@ class ble_device:
             log.error("wrong input for ble_device")
 
     def __init_new_device(self, device):
-        manufacturer = Manufacturer()
-
         self.details = device.details
         self.props = self.details['props']
 
@@ -62,7 +63,7 @@ class ble_device:
         self.manufacturers = None
         self.manufacturer_binary = None
         if manu_data is not None:
-            self.manufacturers = ",".join([str(s) for s in manufacturer.parse(manu_data)])
+            self.manufacturers = ",".join([str(s) for s in manu_data])
             self.manufacturer_binary = ",".join([b.hex() for b in list(manu_data.values())])
         self.txpower = self.__in_props("TxPower")
         self.servicesresolved = self.__in_props("ServicesResolved")
@@ -85,6 +86,23 @@ class ble_device:
             log.warning(f"Addresses don't match: {self.address} - {self.address2}")
 
         self.device_type = self.__parse_device_type()
+
+    def parse_manufacturer(self):
+        # parse using manufacturer data
+        try:
+            # handle old databases (manufacturers is already parsed)
+            if isinstance(self.manufacturers, str):
+                test = int(self.manufacturers.split(",")[0])
+        except ValueError:
+            return
+
+        res = self.manu.parse(self.manufacturers)
+        if res:
+            self.manufacturers = res
+        elif self.addresstype == 'public':
+            res = self.ieee.search_address(self.address)
+            if res:
+                self.manufacturers = res
 
     def __in_props(self, search):
         if self.props != None and search in self.props:
@@ -113,6 +131,7 @@ class ble_device:
         self.timings = []
         self.services = {}
 
+        self.parse_manufacturer()
         self.device_type = self.__parse_device_type()
 
     def get_attributes(self):

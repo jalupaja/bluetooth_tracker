@@ -1,8 +1,10 @@
 bleak
 pybluez
+
 pyyaml
 numpy
 pandas
+
 rich
 matplotlib
 tabulate

@@ -367,7 +367,7 @@ Requesting information ...""",
         for device in devices:
             for attr, _, _ in self.attributes:
                 value = device[attr]
-                if value is not None:
+                if value and attr != "services": # services can't be parsed here # TODO?
                     if value not in unique_attrs[attr]:
                         unique_attrs[attr][value] = []
                     unique_attrs[attr][value].append(device.id)

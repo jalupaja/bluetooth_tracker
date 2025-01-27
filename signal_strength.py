@@ -81,8 +81,10 @@ def addr_callback(device: BLEDevice, advertisement_data: AdvertisementData):
     print("")
 
 def tui_callback(device: BLEDevice, advertisement_data: AdvertisementData):
-    devs.append(ble_device(device))
-    table.update(ble_device(device))
+    dev = ble_device(device)
+    dev.parse_manufacturer()
+    devs.append(dev)
+    table.update(dev)
 
 devs = []
 
