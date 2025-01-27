@@ -1,6 +1,8 @@
 import datetime
+from lib.ieee import IEEE
 
 class bt_device:
+    ieee = IEEE()
     def __init__(self, device):
         # input from database
         self.id = device[0]
@@ -19,6 +21,12 @@ class bt_device:
 
         self.timings = []
         self.services: [BT_service] = []
+
+    def parse_manufacturer(self):
+        if not self.manufacturer or self.manufacturer == "":
+            res = self.ieee.search_address(self.address)
+            if res:
+                self.manufacturer = res
 
     def __getitem__(self, item):
         # not nice but makes things so much easier
