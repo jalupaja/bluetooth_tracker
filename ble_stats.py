@@ -38,7 +38,6 @@ Requesting information ...""",
         # self.TBL_SVC_names = self.db.get_columns(self.TBL_SVC)
 
         # Attributes, weight
-        # TODO better weighting (using ML)
         # -> save to list, list into ML-Model?
         self.attributes = [
             ("name", 0.2, similarity.text),
@@ -250,73 +249,6 @@ Requesting information ...""",
 
         return likely_matches
 
-    # TODO combine with above
-    def check_similar_devices(self, device_id, chunk_size=100, similarity_threshold=0.6, max_workers=8):
-        def get_db_connection():
-            return DB(self.db.path)
-
-        def process_chunk(chunk_offset):
-            local_db = get_db_connection()
-
-            random_devices_data = local_db.execute(
-                f"""
-                SELECT * FROM {self.TBL_DEV}
-                LIMIT {chunk_size} OFFSET {chunk_offset}
-                """
-            )
-            # TODO WHERE id NOT IN ({','.join(str(d.id) for d in original_devices)})
-
-            likely_matches_chunk = []
-            for device_data in random_devices_data:
-                random_device = ble_device(device_data)
-
-                similarity_sum = 0
-                for original_attributes in original_unique_attributes:
-
-                    sim = self.calculate_similarity_from_attributes(
-                        original_attributes, random_device
-                    )
-                    similarity_sum += sim
-
-                similarity_sum = similarity_sum / len(original_devices)
-                if similarity_sum >= similarity_threshold:
-                    likely_matches_chunk.append((random_device.id, similarity_sum))
-                    # print(f"Likely match found: Device ID = {random_device.id}, Similarity = {similarity_sum:.2f}")
-
-            return likely_matches_chunk
-
-        original_device = self.get_device(device_id)
-        original_devices = self.get_devices_by_attribute("address", original_device.address)
-
-        original_unique_attributes = [
-            {attr: dev[attr] for attr, _, _ in self.attributes if dev[attr] is not None}
-            for dev in original_devices
-        ]
-
-        likely_matches = []
-        offset = 0
-
-        total_rows = self.db.execute(
-            f"""
-            SELECT COUNT(*) FROM {self.TBL_DEV}
-            """
-            # WHERE id NOT IN ({','.join(str(d.id) for d in original_devices)})
-        )[0][0]
-
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            offsets = range(0, total_rows, chunk_size)
-
-            test = process_chunk(offsets[0])
-
-            futures = [executor.submit(process_chunk, offset) for offset in offsets]
-
-            for future in futures:
-                likely_matches.extend(future.result())
-
-        likely_matches = sorted(likely_matches, key=lambda x: x[1], reverse=True)
-
-        return len(likely_matches) - len(original_devices), [d.id for d in original_devices]
-
     def find_interesting_random_devices(self, chunk_size=100, similarity_threshold=0.6, max_workers=8):
         devices = self.db.execute(f"SELECT id,manufacturers FROM {self.TBL_DEV} WHERE addresstype = 'random'")
 
@@ -361,7 +293,7 @@ Requesting information ...""",
             else:
                 print(f"Device ID: {device.address} on {d_min} - {d_max} ({len(device.timings)} times in a span of {d_max - d_min})")
 
-    def print_unique_attrs(self, devices):
+    def _get_unique_attrs(self, devices):
         unique_attrs = {attr: {} for attr, _, _ in self.attributes}
 
         for device in devices:
@@ -371,6 +303,10 @@ Requesting information ...""",
                     if value not in unique_attrs[attr]:
                         unique_attrs[attr][value] = []
                     unique_attrs[attr][value].append(device.id)
+        return unique_attrs
+
+    def print_unique_attrs(self, devices):
+        unique_attrs = self._get_unique_attrs(devices)
 
         for attr, values in unique_attrs.items():
             if not values:
@@ -434,17 +370,8 @@ Requesting information ...""",
         unique_values_group1 = {attr: set() for attr, _, _ in self.attributes}
         unique_values_group2 = {attr: set() for attr, _, _ in self.attributes}
 
-        for device in devices_group1:
-            for attr, _, _ in self.attributes:
-                value = device[attr]
-                if value is not None:
-                    unique_values_group1[attr].add(value)
-
-        for device in devices_group2:
-            for attr, _, _ in self.attributes:
-                value = device[attr]
-                if value is not None:
-                    unique_values_group2[attr].add(value)
+        unique_values_group1 = self._get_unique_attrs(devices_group1)
+        unique_values_group2 = self._get_unique_attrs(devices_group2)
 
         for attr, weight, checker_fun in self.attributes:
             values_group1 = list(unique_values_group1[attr])
