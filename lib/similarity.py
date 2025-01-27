@@ -66,17 +66,26 @@ class similarity:
         return intersection / union
 
     @staticmethod
+    def hex(hex1, hex2):
+        bin1 = bin(int(hex1, 16))[2:]
+        bin2 = bin(int(hex2, 16))[2:]
+        return similarity.binary(bin1, bin2)
+
+    @staticmethod
     def binary(binary1, binary2):
-        if binary1 and binary2:
+        # This will compare strings like "001001"
+        if not binary1 or not binary2:
             return 0
 
         # match binary length
-        max_length = max(len(binary1), len(binary2))
-        binary1 = binary1.ljust(max_length, b'\x00')
-        binary2 = binary2.ljust(max_length, b'\x00')
+        total_bits = max(len(binary1), len(binary2))
+        binary1 = binary1.rjust(total_bits, '0')
+        binary2 = binary2.rjust(total_bits, '0')
 
-        matching_bits = sum(bin(byte1 ^ byte2).count('0') - 1 for byte1, byte2 in zip(binary1, binary2))
-        total_bits = max_length * 8
+        matching_bits = 0
+        for b1, b2 in zip(binary1, binary2):
+            if b1 == b2:
+                matching_bits += 1
 
         if DEBUG:
             print(f"binary: {binary1} : {binary2} -> {matching_bits / total_bits}")
@@ -85,7 +94,7 @@ class similarity:
     @staticmethod
     def numeric(num1, num2):
         # expect 0 to be None value
-        if num1 is None or num2 is None or num1 == 0 or num2 == 0:
+        if not num1 or not num2 or num1 == 0 or num2 == 0:
             return 0
 
         if num1 == num2:
@@ -100,6 +109,24 @@ class similarity:
         if DEBUG:
             print(f"num: {num1} : {num2} -> {1 - abs(num1 - num2) / max(abs(num1), abs(num2))}")
         return 1 - abs(num1 - num2) / max(abs(num1), abs(num2))
+
+    @staticmethod
+    def uuids(uuids1, uuids2):
+        if not uuids1 or not uuids2:
+            return 0
+
+        uuids1 = uuids1.split(",")
+        uuids2 = uuids2.split(",")
+
+        matches = 0
+        for uuid in uuids1:
+            if uuid in uuids2:
+                matches += 1
+
+        max_matches = max(len(uuids1), len(uuids2))
+
+        # weighted score
+        return min(1, (matches * 2) / max_matches)
 
     @staticmethod
     def gatt_services(services1, services2):

@@ -48,12 +48,11 @@ Requesting information ...""",
             ("alias", 0.7, similarity.text),
             ("appearance", 0.3, similarity.numeric),
             ("legacypairing", 0.5, similarity.numeric),
-            ("uuids", 1.0, None), # TODO should be compared by string part in ...
+            ("uuids", 1.0, similarity.uuids),
             ("manufacturers", 0.7, similarity.text),
-            ("manufacturer_binary", 0.9, None), # TODO has to be actual bytes!!!
-            ("servicedata", 0.6, None), # TODO should be binary. current is str(binary...)
-            ("advertisingflags", 0.4, None), # TODO
-            ("servicesresolved", 0.2, None), # TODO
+            ("manufacturer_binary", 0.9, similarity.hex),
+            ("servicedata", 0.6, similarity.hex),
+            ("advertisingflags", 0.4, similarity.hex),
             ("class_of_device", 0.3, similarity.text),
             ("modalias", 0.6, similarity.text),
             ("icon", 0.7, similarity.text),
