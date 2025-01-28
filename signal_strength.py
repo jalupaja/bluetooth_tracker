@@ -70,11 +70,11 @@ if __name__ == "__main__":
     search_address = None
     table = TUITable()
 
-    ble_scanner = ble_scanner(tui_callback)
+    address_scaner = ble_scanner(tui_callback)
 
-    ble_scanner.scan()
+    address_scaner.scan()
     table.run()
-    ble_scanner.stop()
+    address_scaner.stop()
 
     options = table.get_sorted_data()
     if options:
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     if search_address:
         graph = GUIGraph()
 
-        addr_scanner = BleScanner(addr_callback)
+        addr_scanner = ble_scanner(addr_callback)
         addr_scanner.scan()
 
         graph.run()
