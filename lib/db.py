@@ -16,7 +16,6 @@ class DB:
 
     def __del__(self):
         if self.con:
-            self.con.commit()
             self.con.close()
             self.con = None
 
@@ -35,6 +34,7 @@ class DB:
         else:
             cur.execute(query)
         res = cur.fetchall()
+        self.con.commit()
         cur.close()
         return res
 
@@ -44,8 +44,8 @@ class DB:
             cur.execute(query, *args)
         else:
             cur.execute(query)
-        self.commit()
         res = cur.lastrowid
+        self.con.commit()
         cur.close()
         return res
 
@@ -56,11 +56,9 @@ class DB:
         else:
             cur.execute(query)
         res = cur.fetchone()
+        self.con.commit()
         cur.close()
         return res
-
-    def commit(self):
-        self.con.commit()
 
     def close(self):
         self.__del__()
@@ -215,7 +213,6 @@ class BluetoothDatabase:
             self.db.execute(table_bluetooth_service)
             self.db.execute(table_bluetooth_device_service)
 
-            self.db.commit()
             log.debug("bluetooth tables created successfully.")
         except sqlite3.Error as e:
             log.error(f"Error creating Bluetooth tables: {e}")
@@ -231,7 +228,6 @@ class BluetoothDatabase:
             self.db.execute(table_ble_device_char)
             self.db.execute(table_ble_char_desc)
 
-            self.db.commit()
             log.debug("ble tables created successfully.")
         except sqlite3.Error as e:
             log.error(f"Error creating BLE tables: {e}")

@@ -27,5 +27,4 @@ print(db.execute(f"SELECT COUNT(*) FROM old{table_name}"))
 print(db.execute(f"SELECT COUNT(*) FROM {table_name}"))
 # db.execute(f"DROP TABLE old_{table_name};")
 
-db.commit()
 # db.close()
