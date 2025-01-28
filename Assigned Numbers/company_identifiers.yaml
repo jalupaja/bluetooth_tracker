@@ -1,5 +1,299 @@
 company_identifiers:
 
+  - value: 0x0E92
+    name: 'Glutz AG'
+
+  - value: 0x0E91
+    name: 'Identita Inc.'
+
+  - value: 0x0E90
+    name: 'RainMaker Solutions, Inc.'
+
+  - value: 0x0E8F
+    name: 'Avetos Design LLC'
+
+  - value: 0x0E8E
+    name: 'Nobest Inc'
+
+  - value: 0x0E8D
+    name: 'Celebrities Management Private Limited'
+
+  - value: 0x0E8C
+    name: 'Gopod Group Holding Limited'
+
+  - value: 0x0E8B
+    name: 'Allgon AB'
+
+  - value: 0x0E8A
+    name: 'Tele-Radio i Lysekil AB'
+
+  - value: 0x0E89
+    name: 'Brudden'
+
+  - value: 0x0E88
+    name: 'Skewered Fencing, LLC'
+
+  - value: 0x0E87
+    name: 'OpenTech Alliance, Inc.'
+
+  - value: 0x0E86
+    name: 'Mercury Marine, a division of Brunswick Corporation'
+
+  - value: 0x0E85
+    name: 'TigerLight, Inc.'
+
+  - value: 0x0E84
+    name: 'Tymphany HK Ltd'
+
+  - value: 0x0E83
+    name: 'SPRiNTUS GmbH'
+
+  - value: 0x0E82
+    name: 'CHEVALIER TECH LIMITED'
+
+  - value: 0x0E81
+    name: 'Guangdong Hengqin Xingtong Technology Co.,ltd.'
+
+  - value: 0x0E80
+    name: 'IQNEXXT Solutions GmbH'
+
+  - value: 0x0E7F
+    name: 'SZR-Dev UG'
+
+  - value: 0x0E7E
+    name: 'Archon Controls LLC'
+
+  - value: 0x0E7D
+    name: 'Jiangsu XinTongda Electric Technology Co.,Ltd.'
+
+  - value: 0x0E7C
+    name: 'final Inc.'
+
+  - value: 0x0E7B
+    name: 'Circular'
+
+  - value: 0x0E7A
+    name: 'Vivago Oy'
+
+  - value: 0x0E79
+    name: 'Neptune First OU'
+
+  - value: 0x0E78
+    name: 'HONG KONG COMMUNICATIONS COMPANY LIMITED'
+
+  - value: 0x0E77
+    name: 'MOBILE TECH, INC.'
+
+  - value: 0x0E76
+    name: 'Guangdong Nanguang Photo&Video Systems Co., Ltd.'
+
+  - value: 0x0E75
+    name: 'Le Touch (Shenzhen) Electronics Co., Ltd.'
+
+  - value: 0x0E74
+    name: 'Rocky Radios LLC'
+
+  - value: 0x0E73
+    name: 'Adventures of the Persistently Impaired (and other tales) Limited'
+
+  - value: 0x0E72
+    name: 'TOR.AI LIMITED'
+
+  - value: 0x0E71
+    name: 'ENABLEWEAR LLC'
+
+  - value: 0x0E70
+    name: 'Powerstick.com'
+
+  - value: 0x0E6F
+    name: 'OpConnect, Inc.'
+
+  - value: 0x0E6E
+    name: 'I.M.LAB Inc'
+
+  - value: 0x0E6D
+    name: 'FEVOS LIMITED'
+
+  - value: 0x0E6C
+    name: 'RIGH, INC.'
+
+  - value: 0x0E6B
+    name: 'Shenzhen Goodocom Information Technology Co., Ltd.'
+
+  - value: 0x0E6A
+    name: 'Hyena Inc.'
+
+  - value: 0x0E69
+    name: 'Megatronix (Beijing) Technology Co., Ltd'
+
+  - value: 0x0E68
+    name: 'EarTex Ltd'
+
+  - value: 0x0E67
+    name: 'NEXT DEVICES LTDA'
+
+  - value: 0x0E66
+    name: 'Shenzhen Baseus Technology Co., Ltd.'
+
+  - value: 0x0E65
+    name: 'Daikin Industries, LTD'
+
+  - value: 0x0E64
+    name: 'HuiTong intelligence Company Limited'
+
+  - value: 0x0E63
+    name: 'LAST LOCK INC.'
+
+  - value: 0x0E62
+    name: 'GOKI PTY LTD'
+
+  - value: 0x0E61
+    name: 'Queclink Wireless Solutions Co., Ltd.'
+
+  - value: 0x0E60
+    name: 'Ant Group Co., Ltd.'
+
+  - value: 0x0E5F
+    name: 'Ruptela'
+
+  - value: 0x0E5E
+    name: 'SHAPER TOOLS, INC.'
+
+  - value: 0x0E5D
+    name: 'L.T.H. Electronics Limited'
+
+  - value: 0x0E5C
+    name: 'Amimon Ltd.'
+
+  - value: 0x0E5B
+    name: 'Wuhu Hongjing Electronic Co.,Ltd'
+
+  - value: 0x0E5A
+    name: 'OmniWave Microelectronics Shanghai Co., Ltd'
+
+  - value: 0x0E59
+    name: 'Loewe Technology GmbH'
+
+  - value: 0x0E58
+    name: 'Urban Armor Gear, LLC'
+
+  - value: 0x0E57
+    name: 'Altina Inc.'
+
+  - value: 0x0E56
+    name: 'INEPRO Metering B.V.'
+
+  - value: 0x0E55
+    name: 'New Cosmos Electric Co., Ltd.'
+
+  - value: 0x0E54
+    name: 'Relief Technologies AS'
+
+  - value: 0x0E53
+    name: 'MINIRIG'
+
+  - value: 0x0E52
+    name: 'Aquana, LLC'
+
+  - value: 0x0E51
+    name: 'Dyaco International Inc.'
+
+  - value: 0x0E50
+    name: 'Zhejiang Desman Intelligent Technology Co., Ltd.'
+
+  - value: 0x0E4F
+    name: 'eBet Gaming Sytems Pty Limited'
+
+  - value: 0x0E4E
+    name: 'QSC, LLC'
+
+  - value: 0x0E4D
+    name: 'Brooksee, Inc.'
+
+  - value: 0x0E4C
+    name: 'Luxshare Precision Industry Co., Ltd.'
+
+  - value: 0x0E4B
+    name: 'PUDSEY DIAMOND ENGINEERING LIMITED'
+
+  - value: 0x0E4A
+    name: 'Nitto Denko Corporation'
+
+  - value: 0x0E49
+    name: 'Deone (Shanghai) Communication & Technology Co., Ltd'
+
+  - value: 0x0E48
+    name: 'KARLUNA MUHENDISLIK SANAYI VE TICARET ANONIM SIRKETI'
+
+  - value: 0x0E47
+    name: 'Hosiden Besson Limited'
+
+  - value: 0x0E46
+    name: 'SOUNDUCT'
+
+  - value: 0x0E45
+    name: 'Filo Srl'
+
+  - value: 0x0E44
+    name: 'QUANTATEC'
+
+  - value: 0x0E43
+    name: 'InnoVision Medical Technologies, LLC'
+
+  - value: 0x0E42
+    name: 'Z-ONE Technology Co., Ltd.'
+
+  - value: 0x0E41
+    name: 'Asustek Computer Inc.'
+
+  - value: 0x0E40
+    name: 'WKD Labs Ltd'
+
+  - value: 0x0E3F
+    name: 'Wiser Devices, LLC'
+
+  - value: 0x0E3E
+    name: 'VANBOX'
+
+  - value: 0x0E3D
+    name: 'Walmart Inc.'
+
+  - value: 0x0E3C
+    name: 'Viselabs'
+
+  - value: 0x0E3B
+    name: 'Swift IOT Tech (Shenzhen) Co., LTD.'
+
+  - value: 0x0E3A
+    name: 'OFIVE LIMITED'
+
+  - value: 0x0E39
+    name: 'IRES Infrarot Energie Systeme GmbH'
+
+  - value: 0x0E38
+    name: 'SLOC GmbH'
+
+  - value: 0x0E37
+    name: 'CESYS Gesellschaft für angewandte Mikroelektronik mbH'
+
+  - value: 0x0E36
+    name: 'Cousins and Sears LLC'
+
+  - value: 0x0E35
+    name: 'SNAPPWISH LLC'
+
+  - value: 0x0E34
+    name: 'Vermis, software solutions llc'
+
+  - value: 0x0E33
+    name: 'Crescent NV'
+
+  - value: 0x0E32
+    name: 'PACIFIC INDUSTRIAL CO., LTD.'
+
+  - value: 0x0E31
+    name: 'AlphaTheta Corporation'
+
   - value: 0x0E30
     name: 'Primax Electronics Ltd.'
 
@@ -6568,7 +6862,7 @@ company_identifiers:
     name: 'Shanghai Xiaoyi Technology Co.,Ltd.'
 
   - value: 0x05A0
-    name: 'RCP Software Oy'
+    name: 'Dream Devices Technologies Oy'
 
   - value: 0x059F
     name: 'Fisher & Paykel Healthcare'
@@ -7909,7 +8203,7 @@ company_identifiers:
     name: 'SPD Development Company Ltd'
 
   - value: 0x03E0
-    name: 'Actions (Zhuhai) Technology Co., Limited'
+    name: 'Actions Technology Co.,Ltd'
 
   - value: 0x03DF
     name: 'Grob Technologies, LLC'
@@ -10255,7 +10549,7 @@ company_identifiers:
     name: 'Taixingbang Technology (HK) Co,. LTD.'
 
   - value: 0x00D2
-    name: 'Dialog Semiconductor B.V.'
+    name: 'Renesas Design Netherlands B.V.'
 
   - value: 0x00D1
     name: 'Polar Electro Europe B.V.'
