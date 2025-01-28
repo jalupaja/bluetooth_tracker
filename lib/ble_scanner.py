@@ -20,15 +20,19 @@ class ble_scanner:
         else:
             scanner = BleakScanner(self.callback)
 
-        try:
-            while True:
+        while True:
+            try:
                 await scanner.start()
                 await asyncio.sleep(1)
                 await scanner.stop()
-        except asyncio.CancelledError:
-            pass
-        finally:
-            await scanner.stop()
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                log.info(f"BLE Discovery failed: {e}")
+                await asyncio.sleep(1)
+                continue
+
+        await scanner.stop()
 
     def scan(self):
         def run_loop():
