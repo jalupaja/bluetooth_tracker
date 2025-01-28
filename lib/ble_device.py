@@ -73,6 +73,8 @@ class ble_device:
         self.timestamp = datetime.datetime.now().replace(microsecond=0) # timestamp in seconds
         self.geolocation = None
 
+        self.services = {}
+
         self.props = self.details['props']
 
         done_props = "Class", "Modalias", "Icon", "Name", "Address", "AddressType", "Alias", "Appearance", "Paired", "Bonded", "Trusted", "Blocked", "LegacyPairing", "RSSI", "Connected", "UUIDs", "ManufacturerData", "ServiceData", "AdvertisingFlags", "AdvertisingData", "TxPower", "ServicesResolved", "Adapter"
@@ -125,6 +127,9 @@ class ble_device:
         if self.manufacturer_binary == "(None,)":
             self.manufacturer_binary = None
 
+        if self.advertisingflags == "(None,)":
+            self.advertisingflags = None
+
         if self.servicedata == "(None,)":
             self.servicedata = None
 
@@ -143,27 +148,23 @@ class ble_device:
                 "modalias", "icon"]
 
     def __parse_device_type(self):
-        """
-        Parse the device type using information gathered from the device
-        sources:
-            https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-cdp/77b446d0-8cea-4821-ad21-fabdf4d9a569?redirectedfrom=MSDN
-        """
-
         if self.manufacturer_binary and len(self.manufacturer_binary) >= 4:
-            # TODO rename
+            # sources
+                # https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-cdp/77b446d0-8cea-4821-ad21-fabdf4d9a569?redirectedfrom=MSDN
+
             manu_nibble = self.manufacturer_binary[0:2]
             manu_nibble_2 = self.manufacturer_binary[0:2]
-            if self.manufacturers == "Apple, Inc.":
+            if self.manufacturers in ["76", "Apple, Inc."]:
                 if manu_nibble in ["12", "07"]:
                     return "Apple AirTag"
                 elif manu_nibble == "02":
                     return "Mac"
                 elif manu_nibble_2 == "06":
                     return "IPhone"
-                elif manu_nibble_2 == "07":
+                elif manu_nibble_2 in ["07"]:
                     return "IPad"
 
-            if self.manufacturers == "Microsoft":
+            if self.manufacturers in ["6", "Microsoft"]:
                 if manu_nibble_2 == "09":
                     return "Windows Desktop"
                 elif manu_nibble_2 in ["0a"]:
@@ -230,6 +231,7 @@ class ble_device:
         ret_str = ""
         for attr in self.get_attributes():
             ret_str += f"{attr}: {self[attr]}\n"
+        ret_str += f"services: {len(self.services)}"
         return ret_str
 
     def to_dict(self):
