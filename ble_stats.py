@@ -170,17 +170,35 @@ Requesting information ...""",
         return devices
 
     def calculate_similarity_from_attributes(self, original_attributes, random_device):
+        def _is_none_val(val):
+            if not val:
+                return True
+            elif isinstance(val, (list, set, dict)) and len(val) <= 0:
+                return True
+            else:
+                return False
+
         similarity_score = 0
         total_weight = 0
 
         for attr, weight, checker_fun in self.attributes:
             if attr in original_attributes and getattr(random_device, attr, None) is not None:
-                similarity_score += weight * similarity.calculate_similarity(original_attributes[attr], random_device[attr], checker_fun)
-                total_weight += weight
+                # TODO UPDATE HERE (check for None. if both: ignore, if one: 0) if list/set/dict check len()
+                original_attr = original_attributes[attr]
+                random_attr = random_device[attr]
+                if _is_none_val(original_attr) and _is_none_val(random_attr):
+                    # ignore value if both are None (empty lists/... count as None)
+                    pass
+                elif _is_none_val(original_attr) or _is_none_val(random_attr):
+                    # if one is None, don't call checker_fun
+                    total_weight += weight
+                else:
+                    similarity_score += weight * similarity.calculate_similarity(original_attr, random_attr, checker_fun)
+                    total_weight += weight
 
         return similarity_score / total_weight if total_weight > 0 else 0
 
-    def find_similar_devices(self, device_id, chunk_size=100, similarity_threshold=0.6, max_workers=8):
+    def find_similar_devices(self, device_id, chunk_size=100, similarity_threshold=0.1, max_workers=8):
         def get_db_connection():
             return DB(self.db.path)
 
@@ -252,7 +270,7 @@ Requesting information ...""",
 
         return likely_matches
 
-    def find_interesting_random_devices(self, chunk_size=100, similarity_threshold=0.6, max_workers=8):
+    def find_interesting_random_devices(self, chunk_size=100, similarity_threshold=0.1, max_workers=8):
         devices = self.db.execute(f"SELECT id,manufacturers FROM {self.TBL_DEV} WHERE addresstype = 'random'")
 
         covered_devices = []
