@@ -67,6 +67,9 @@ class similarity:
 
     @staticmethod
     def hex(hex1, hex2):
+        if not hex1 or not hex2:
+            return 0
+
         bin1 = bin(int(hex1, 16))[2:]
         bin2 = bin(int(hex2, 16))[2:]
         return similarity.binary(bin1, bin2)
