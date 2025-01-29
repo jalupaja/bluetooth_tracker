@@ -287,6 +287,11 @@ Requesting information ...""",
 
     def print_all_timings(self, devices):
         timings = []
+
+        # allow input of a single device
+        if not isinstance(devices, (list, set)):
+            devices = [devices]
+
         for device in devices:
             for timing in device.timings:
                 timings.append((device.address, timing))
@@ -299,6 +304,11 @@ Requesting information ...""",
 
     def print_timings(self, devices):
         device_timings = []
+
+        # allow input of a single device
+        if not isinstance(devices, (list, set)):
+            devices = [devices]
+
         for device in devices:
             d_min, d_max = device.get_timings_minmax()
             if d_min is not None:
