@@ -75,12 +75,13 @@ Requesting information ...""",
                                        """)
 
         svc_timings = []
-        for svc in services:
-            svc_timings.append(self.db.execute(f"""SELECT t.timestamp, t.geolocation FROM {self.TBL_TIME} t
-                                INNER JOIN {self.TBL_DEV_SVC} ds ON t.id = ds.time_id
-                                WHERE ds.service_id = {svc[0]}
-                                """))
-        dev.add_services_timings(services, svc_timings)
+        if services:
+            for svc in services:
+                svc_timings.append(self.db.execute(f"""SELECT t.timestamp, t.geolocation FROM {self.TBL_TIME} t
+                                    INNER JOIN {self.TBL_DEV_SVC} ds ON t.id = ds.time_id
+                                    WHERE ds.service_id = {svc[0]}
+                                    """))
+            dev.add_services_timings(services, svc_timings)
 
         return dev
 

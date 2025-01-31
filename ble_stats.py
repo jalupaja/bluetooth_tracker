@@ -112,33 +112,35 @@ Requesting information ...""",
             pass
 
         services = {}
-        for info in char_info:
-            svc_id = info[0]
-            char_id = info[1]
+        if char_info:
+            for info in char_info:
+                svc_id = info[0]
+                char_id = info[1]
 
-            if not svc_id:
-                continue
+                if not svc_id:
+                    continue
 
-            if not svc_id in services:
-                services[svc_id] = GattService(self.db.execute_single(f"SELECT * FROM {self.TBL_SVC} WHERE id = {svc_id}"))
+                if not svc_id in services:
+                    services[svc_id] = GattService(self.db.execute_single(f"SELECT * FROM {self.TBL_SVC} WHERE id = {svc_id}"))
 
-            if char_id:
-                char = GattCharacteristic(self.db.execute_single(f"SELECT * FROM {self.TBL_CHAR} WHERE id = {char_id}"))
+                if char_id:
+                    char = GattCharacteristic(self.db.execute_single(f"SELECT * FROM {self.TBL_CHAR} WHERE id = {char_id}"))
 
 
-                desc_info = self.db.execute(f"""SELECT desc_id
-                                             FROM {self.TBL_DEV_DESC}
-                                             WHERE char_id = {char_id}
-                                             """)
+                    desc_info = self.db.execute(f"""SELECT desc_id
+                                                 FROM {self.TBL_DEV_DESC}
+                                                 WHERE char_id = {char_id}
+                                                 """)
 
-                if len(desc_info) > 0:
-                    desc_ids = [str(d[0]) for d in desc_info]
-                    desc_data = self.db.execute(f"""SELECT * FROM {self.TBL_DESC}
-                                                 WHERE id in ({', '.join(desc_ids)})""")
+                    if desc_info and len(desc_info) > 0:
+                        desc_ids = [str(d[0]) for d in desc_info]
+                        desc_data = self.db.execute(f"""SELECT * FROM {self.TBL_DESC}
+                                                     WHERE id in ({', '.join(desc_ids)})""")
 
-                    char.descriptors = [GattDescriptor(desc) for desc in desc_data]
+                        if desc_data:
+                            char.descriptors = [GattDescriptor(desc) for desc in desc_data]
 
-                services[svc_id].characteristics.append(char)
+                    services[svc_id].characteristics.append(char)
 
         parsed_services = {}
         for svc in services.values():
