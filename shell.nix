@@ -4,6 +4,7 @@
 pkgs.mkShell {
   buildInputs = with pkgs;[
     python312
+    python312Packages.sqlalchemy
     python312Packages.bleak
     python312Packages.pybluez
 

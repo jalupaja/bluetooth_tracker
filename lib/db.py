@@ -1,4 +1,5 @@
-import sqlite3
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 import pickle
 import time
 import threading
@@ -11,13 +12,17 @@ export_all_objects = False
 
 class DB:
     def __init__(self, path):
-        self.path = path
-        self.con = sqlite3.connect(path, check_same_thread=False)
+        self.engine = create_engine(
+            f"sqlite:///{path}",
+            echo=False,
+            pool_size=10,
+            max_overflow=20,
+            connect_args={"check_same_thread": False}
+        )
+        self.Session = sessionmaker(bind=self.engine)
 
     def __del__(self):
-        if self.con:
-            self.con.close()
-            self.con = None
+        self.close()
 
     def get_tables(self):
         tables = self.execute("SELECT name FROM sqlite_master WHERE type='table'")
@@ -27,41 +32,57 @@ class DB:
         columns_info = self.execute(f"PRAGMA table_info({table})")
         return [col[1] for col in columns_info]
 
+    def __execute(self, session, query, *args, retries = 3):
+        for _ in range(retries):
+            try:
+                return session.execute(query, *args)
+            except OperationalError as e:
+                print("retry")
+                if "database is locked" in str(e):
+                    time.sleep(0.05)
+                else:
+                    raise e
+        log.info(f"Failed executing {query}")
+        return None
+
     def execute(self, query, *args):
-        cur = self.con.cursor()
-        if len(args) > 0:
-            cur.execute(query, *args)
-        else:
-            cur.execute(query)
-        res = cur.fetchall()
-        self.con.commit()
-        cur.close()
-        return res
+        with self.Session() as session:
+            result = self.__execute(session, text(query), *args)
+            if result:
+                session.commit()
+                res = result.fetchall()
+                if res:
+                    return [tuple(r) for r in res if r]
+        return None
+
+    def execute_silent(self, query):
+        with self.Session() as session:
+            result = self.__execute(session, text(query))
+            if result:
+                session.commit()
 
     def execute_rowid(self, query, *args):
-        cur = self.con.cursor()
-        if len(args) > 0:
-            cur.execute(query, *args)
-        else:
-            cur.execute(query)
-        res = cur.lastrowid
-        self.con.commit()
-        cur.close()
-        return res
+        with self.Session() as session:
+            result = self.__execute(session, text(query), *args)
+            if result:
+                session.commit()
+                return result.lastrowid
+        return None
 
     def execute_single(self, query, *args):
-        cur = self.con.cursor()
-        if len(args) > 0:
-            cur.execute(query, *args)
-        else:
-            cur.execute(query)
-        res = cur.fetchone()
-        self.con.commit()
-        cur.close()
-        return res
+        with self.Session() as session:
+            result = self.__execute(session, text(query), *args)
+            if result:
+                session.commit()
+                res = result.fetchone()
+                if res:
+                    return tuple(res)
+        return None
 
     def close(self):
-        self.__del__()
+        if self.engine:
+            self.engine.dispose()
+            self.engine = None
 
 table_time = """CREATE TABLE IF NOT EXISTS time (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -207,41 +228,41 @@ class BluetoothDatabase:
 
     def create_bluetooth_tables(self):
         try:
-            self.db.execute(table_time)
-            self.db.execute(table_bluetooth_device_time)
-            self.db.execute(table_bluetooth_device)
-            self.db.execute(table_bluetooth_service)
-            self.db.execute(table_bluetooth_device_service)
+            self.db.execute_silent(table_time)
+            self.db.execute_silent(table_bluetooth_device_time)
+            self.db.execute_silent(table_bluetooth_device)
+            self.db.execute_silent(table_bluetooth_service)
+            self.db.execute_silent(table_bluetooth_device_service)
 
             log.debug("bluetooth tables created successfully.")
-        except sqlite3.Error as e:
+        except Exception as e:
             log.error(f"Error creating Bluetooth tables: {e}")
 
     def create_ble_tables(self):
         try:
-            self.db.execute(table_time)
-            self.db.execute(table_ble_device_time)
-            self.db.execute(table_ble_device)
-            self.db.execute(table_ble_service)
-            self.db.execute(table_ble_characteristic)
-            self.db.execute(table_ble_descriptor)
-            self.db.execute(table_ble_device_char)
-            self.db.execute(table_ble_char_desc)
+            self.db.execute_silent(table_time)
+            self.db.execute_silent(table_ble_device_time)
+            self.db.execute_silent(table_ble_device)
+            self.db.execute_silent(table_ble_service)
+            self.db.execute_silent(table_ble_characteristic)
+            self.db.execute_silent(table_ble_descriptor)
+            self.db.execute_silent(table_ble_device_char)
+            self.db.execute_silent(table_ble_char_desc)
 
             log.debug("ble tables created successfully.")
-        except sqlite3.Error as e:
+        except Exception as e:
             log.error(f"Error creating BLE tables: {e}")
 
     def __create_where_clause__(self, columns: dict):
         clauses = []
-        params = []
+        params = {}
 
         for col, val in columns.items():
             if val is None:
                 clauses.append(f"{col} IS NULL")
             else:
-                clauses.append(f"{col} = ?")
-                params.append(val)
+                clauses.append(f"{col} = :{col}")
+                params[col] = val
 
         return " AND ".join(clauses), params
 
@@ -249,7 +270,7 @@ class BluetoothDatabase:
         try:
             where_clause, params = self.__create_where_clause__(columns)
             return self.db.execute_single(f"SELECT * FROM {table} WHERE {where_clause}", params)
-        except sqlite3.Error as e:
+        except Exception as e:
             log.warning(f"Error fetching items from {table}: {e}")
 
         return None
@@ -259,12 +280,12 @@ class BluetoothDatabase:
             data = self.__select_exactly__(table, columns)
             if (data is None or len(data) <= 0):
                 return self.db.execute_rowid(f"""INSERT OR IGNORE INTO {table} ({", ".join([col for col in columns.keys()])})
-                               VALUES ({", ".join(['?'] * len(columns))});""",
-                               list(columns.values()))
+                               VALUES ({", ".join([f":{c}" for c in columns.keys()])});""",
+                               columns)
             else:
                 return data[0]
 
-        except sqlite3.Error as e:
+        except Exception as e:
             log.warning(f"Error inserting {table} into database: {e}")
 
         return None

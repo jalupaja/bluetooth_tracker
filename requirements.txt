@@ -1,3 +1,4 @@
+sqlalchemy
 bleak
 pybluez
 
