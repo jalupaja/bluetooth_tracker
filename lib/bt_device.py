@@ -22,11 +22,14 @@ class bt_device:
         self.timings = []
         self.services: [BT_service] = []
 
-    def parse_manufacturer(self):
+    def update_manufacturer(self):
         if not self.manufacturer or self.manufacturer == "":
-            res = self.ieee.search_address(self.address)
+            res = self.parse_manufacturer()
             if res:
                 self.manufacturer = res
+
+    def parse_manufacturer(self):
+        return self.ieee.search_address(self.address)
 
     def __getitem__(self, item):
         # not nice but makes things so much easier

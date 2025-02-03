@@ -62,7 +62,7 @@ Requesting information ...""",
         dev = bt_device(
                 self.db.execute(f"SELECT * FROM {self.TBL_DEV} WHERE id = '{device_id}'")[0]
                 )
-        dev.parse_manufacturer()
+        dev.update_manufacturer()
 
         dev.add_timings(self.db.execute(f"""SELECT t.timestamp, t.geolocation FROM {self.TBL_TIME} t
                             INNER JOIN {self.TBL_DEV_TIME} dt ON t.id = dt.time_id

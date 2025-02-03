@@ -89,6 +89,11 @@ class ble_device:
 
         self.device_type = self.__parse_device_type()
 
+    def update_manufacturer(self):
+        res = self.parse_manufacturer()
+        if res:
+            self.manufacturers = res
+
     def parse_manufacturer(self):
         # parse using manufacturer data
         try:
@@ -100,11 +105,9 @@ class ble_device:
 
         res = self.manu.parse(self.manufacturers)
         if res:
-            self.manufacturers = res
+            return res
         elif self.addresstype == 'public':
-            res = self.ieee.search_address(self.address)
-            if res:
-                self.manufacturers = res
+            return self.ieee.search_address(self.address)
 
     def __in_props(self, search):
         if self.props != None and search in self.props:
@@ -136,7 +139,7 @@ class ble_device:
         self.timings = []
         self.services = {}
 
-        self.parse_manufacturer()
+        self.update_manufacturer()
         self.device_type = self.__parse_device_type()
 
     def get_attributes(self):
