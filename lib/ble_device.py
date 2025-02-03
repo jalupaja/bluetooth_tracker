@@ -207,10 +207,11 @@ class ble_device:
 
     def __parse_timings(self, timings):
         ret = []
-        for t in timings:
-            time = datetime.datetime.strptime(t[0], "%Y-%m-%d %H:%M:%S")
-            geo = t[1]
-            ret.append((time, geo))
+        if timings:
+            for t in timings:
+                time = datetime.datetime.strptime(t[0], "%Y-%m-%d %H:%M:%S")
+                geo = t[1]
+                ret.append((time, geo))
 
         return ret
 
