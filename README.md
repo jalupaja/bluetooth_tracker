@@ -1,5 +1,7 @@
 # Bluetooth scanner
-> This is a WIP project with the goal of tracking Bluetooth devices
+> This project has the goal of tracking and later analysing Bluetooth devices
+
+The official repository is hosted on [github](https://github.com/jalupaja/bluetooth_tracker).
 
 ## Current Capabilities
 - list BLE devices and their properties
