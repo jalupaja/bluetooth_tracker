@@ -14,7 +14,6 @@ pkgs.mkShell {
 
     python312Packages.rich
     python312Packages.matplotlib
-    pkgs.python312Packages.tabulate
   ];
 
   # shellHook = "source .venv/bin/activate";

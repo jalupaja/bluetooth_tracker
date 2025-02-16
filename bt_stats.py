@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from collections import Counter
-from tabulate import tabulate
 
 from lib.bt_device import bt_device
 from lib.db import DB
